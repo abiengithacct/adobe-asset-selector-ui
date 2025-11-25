@@ -109,11 +109,14 @@
         .btn-remove:hover { background: #c0392b; }
         
         /* ADOBE SELECTOR DIALOG */
-        #asset-selector-dialog { 
-            width: 90vw; height: 90vh; max-width: 1600px; border: none; 
-            border-radius: 12px; box-shadow: 0 25px 80px rgba(0,0,0,0.4); 
-            background: white; padding: 0;
-        }
+    /* Fixes modal centering if it's drifting */
+#asset-selector-dialog {
+    /* ... existing properties ... */
+    position: fixed; /* Ensure it respects viewport */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
         #asset-selector-dialog::backdrop { 
             background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
         }
@@ -281,19 +284,26 @@
 
     // --- 2. IMS PROPERTIES (AUTHENTICATION) ---
     const imsProps = {
+
+// index.html <script> section
+
+const imsProps = {
+
+        
         imsClientId: IMS_CLIENT_ID,
         imsEnvironment: "prod", // Added for robust token management
         imsScope: "AdobeID, openid, aem.folders, aem.assets.author",
         redirectUrl: GITHUB_PAGES_REDIRECT_URI, // Now uses the correct URL
-        modalMode: true,
-        
-        onAccessTokenReceived: (token) => {
-            console.log("IMS Token Received successfully.");
-        },
-        onErrorReceived: (type, msg) => {
-            showToast("IMS Authentication Error", msg, 'error');
-            console.error("IMS Error:", type, msg);
-        },
+ modalMode: true, 
+    popUp: true, // Explicitly tell the library to prefer a pop-up
+
+    onAccessTokenReceived: (token) => {
+        console.log("IMS Token Received successfully.");
+        // The pop-up window *should* close automatically after successful token retrieval.
+    },
+    onErrorReceived: (type, msg) => {
+        showToast("IMS Authentication Error", `Type: ${type}. Message: ${msg}`, 'error');
+        console.error("IMS Error:", type, msg);
     };
 
     // --- 4. INITIALIZE IMS SERVICE ---
