@@ -107,19 +107,43 @@
             border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;
         }
         .btn-remove:hover { background: #c0392b; }
+
+
+    /* ADOBE SELECTOR DIALOG */
+    #asset-selector-dialog {
+        /* Fixes modal centering */
+        position: fixed; /* Ensures placement is relative to viewport */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         
-        /* ADOBE SELECTOR DIALOG */
-    /* Fixes modal centering if it's drifting */
-#asset-selector-dialog {
-    /* ... existing properties ... */
-    position: fixed; /* Ensure it respects viewport */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-        #asset-selector-dialog::backdrop { 
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
-        }
+        /* UI FIX: Removes browser default border/margin on <dialog> */
+        border: none; 
+        border-radius: 12px; 
+        box-shadow: 0 25px 80px rgba(0,0,0,0.4); 
+        background: white; 
+        padding: 0;
+        
+        /* Ensures size is consistent */
+        width: 90vw; 
+        height: 90vh; 
+        max-width: 1600px; 
+    }
+    
+    #asset-selector-dialog::backdrop { 
+        background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+    }
+    
+    /* Ensure the MFE container fills the dialog space cleanly */
+    #asset-selector-container { 
+        height: calc(100% - 64px); 
+        overflow: hidden; 
+        background: white;
+        /* UI FIX: Removed any external padding/margins */
+        padding: 0; 
+        margin: 0;
+    }
+    
         
         .dialog-header { 
             height: 64px; background: linear-gradient(135deg, #2c3e50, #34495e);
@@ -278,32 +302,27 @@
     const AEM_HOST = 'https://author-p173552-e1855304.adobeaemcloud.com';
     const IMS_CLIENT_ID = '466f31740dc24133a32506acb2823d3f';
     
-    // CRITICAL FIX 1: Use the EXACT GitHub Pages live URL (NO trailing slash)
+    // CRITICAL: Use the EXACT GitHub Pages live URL (NO trailing slash in code)
     const GITHUB_PAGES_REDIRECT_URI = 'https://abiengithacct.github.io/adobe-asset-selector-ui';
 
 
     // --- 2. IMS PROPERTIES (AUTHENTICATION) ---
     const imsProps = {
-
-// index.html <script> section
-
-const imsProps = {
-
-        
+        // --- FIX: Cleaned up duplicate/malformed object definitions ---
         imsClientId: IMS_CLIENT_ID,
-        imsEnvironment: "prod", // Added for robust token management
+        imsEnvironment: "prod", 
         imsScope: "AdobeID, openid, aem.folders, aem.assets.author",
-        redirectUrl: GITHUB_PAGES_REDIRECT_URI, // Now uses the correct URL
- modalMode: true, 
-    popUp: true, // Explicitly tell the library to prefer a pop-up
+        redirectUrl: GITHUB_PAGES_REDIRECT_URI,
+        modalMode: true,
+        popUp: true, 
 
-    onAccessTokenReceived: (token) => {
-        console.log("IMS Token Received successfully.");
-        // The pop-up window *should* close automatically after successful token retrieval.
-    },
-    onErrorReceived: (type, msg) => {
-        showToast("IMS Authentication Error", `Type: ${type}. Message: ${msg}`, 'error');
-        console.error("IMS Error:", type, msg);
+        onAccessTokenReceived: (token) => {
+            console.log("IMS Token Received successfully.");
+        },
+        onErrorReceived: (type, msg) => {
+            showToast("IMS Authentication Error", `Type: ${type}. Message: ${msg}`, 'error');
+            console.error("IMS Error:", type, msg);
+        } // FIX: Removed semicolon and fixed the misplaced closing brackets
     };
 
     // --- 4. INITIALIZE IMS SERVICE ---
@@ -324,24 +343,19 @@ const imsProps = {
             return;
         }
         
-        // CRITICAL FIX 2: Define assetSelectorProps INSIDE the render function
-        // This ensures the correct, initialized imsInstance is passed via authService
         const assetSelectorProps = {
             aemHost: AEM_HOST,
             repositoryId: 'crx',
             env: 'prod',
             selectMode: 'single',
             allowedAssetMimeTypes: ["image/png", "image/jpeg", "image/jpg"],
-            
-            // CRITICAL: Link the registered IMS instance
-            authService: imsInstance, 
+            authService: imsInstance,
             
             // Handlers for selection events
             onAssetSelect: (assets) => {
                 if (assets && assets.length > 0) {
                     const selectedAsset = assets[0];
-                    // You would call your GAS backend function here: sendAssetToServer(selectedAsset);
-                    updateAssetUI(selectedAsset); // Placeholder UI update
+                    updateAssetUI(selectedAsset);
                 }
                 document.getElementById('asset-selector-dialog').close();
             },
