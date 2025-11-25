@@ -267,51 +267,71 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
-  <script>
-        // Store the IMS instance globally for re-use
-        let imsInstance = null;
+<script>
+    // Store the IMS instance globally for re-use
+    let imsInstance = null;
+    
+    // --- 1. CONFIGURATION ---
+    const AEM_HOST = 'https://author-p173552-e1855304.adobeaemcloud.com';
+    const IMS_CLIENT_ID = '466f31740dc24133a32506acb2823d3f';
+    
+    // CRITICAL FIX 1: Use the EXACT GitHub Pages live URL (NO trailing slash)
+    const GITHUB_PAGES_REDIRECT_URI = 'https://abiengithacct.github.io/adobe-asset-selector-ui';
 
-        // --- 1. CONFIGURATION ---
-        const AEM_HOST = 'https://author-p173552-e1855304.adobeaemcloud.com';
-        const IMS_CLIENT_ID = '466f31740dc24133a32506acb2823d3f';
-        const GAS_REDIRECT_URI = 'https://script.google.com/a/macros/moengage.com/s/AKfycbz-DyVpN7NE04h84Wg5v4KyvnAGjU7iWMKIU_f4wTSDySjahnnE4YNCVOIWEc6WTRZxOg/exec';
 
+    // --- 2. IMS PROPERTIES (AUTHENTICATION) ---
+    const imsProps = {
+        imsClientId: IMS_CLIENT_ID,
+        imsEnvironment: "prod", // Added for robust token management
+        imsScope: "openid, AdobeID, aem.assets.author, aem.folders",
+        redirectUrl: GITHUB_PAGES_REDIRECT_URI, // Now uses the correct URL
+        modalMode: true,
+        
+        onAccessTokenReceived: (token) => {
+            console.log("IMS Token Received successfully.");
+        },
+        onErrorReceived: (type, msg) => {
+            showToast("IMS Authentication Error", msg, 'error');
+            console.error("IMS Error:", type, msg);
+        },
+    };
 
-        // --- 2. IMS PROPERTIES (AUTHENTICATION) ---
-        const imsProps = {
-            imsClientId: IMS_CLIENT_ID,
-            // You configured aem.assets.author, openid, AdobeID, aem.folders
-            imsScope: "openid, AdobeID, aem.assets.author, aem.folders", 
-            redirectUrl: GAS_REDIRECT_URI, // IMPORTANT: Must use the specific GAS deployment URL
-            modalMode: true,
-            
-            // Handlers for logging and debugging
-            onAccessTokenReceived: (token) => {
-                console.log("IMS Token Received successfully.");
-                // Store the token if needed for other API calls
-            },
-            onErrorReceived: (type, msg) => {
-                showToast("IMS Authentication Error", msg, 'error');
-                console.error("IMS Error:", type, msg);
-            },
-        };
-
-        // --- 3. ASSET SELECTOR PROPERTIES (UI/AEM CONNECTION) ---
+    // --- 4. INITIALIZE IMS SERVICE ---
+    function initializeImsService() {
+        if (typeof PureJSSelectors !== 'undefined') {
+            imsInstance = PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
+            console.log("IMS Service Registered. Ready for Auth Flow.");
+        } else {
+            console.error("PureJSSelectors library not loaded. Retrying...");
+            setTimeout(initializeImsService, 500);
+        }
+    }
+    
+    // --- 5. RENDER FUNCTION (Called by Button) ---
+    function renderAssetSelectorWithAuthFlow() {
+        if (!imsInstance) {
+            showToast("Error", "IMS Service not yet initialized. Please wait a moment.", 'info');
+            return;
+        }
+        
+        // CRITICAL FIX 2: Define assetSelectorProps INSIDE the render function
+        // This ensures the correct, initialized imsInstance is passed via authService
         const assetSelectorProps = {
             aemHost: AEM_HOST,
             repositoryId: 'crx',
             env: 'prod',
             selectMode: 'single',
             allowedAssetMimeTypes: ["image/png", "image/jpeg", "image/jpg"],
-            // Use the imsInstance registered earlier
+            
+            // CRITICAL: Link the registered IMS instance
             authService: imsInstance, 
             
             // Handlers for selection events
             onAssetSelect: (assets) => {
                 if (assets && assets.length > 0) {
                     const selectedAsset = assets[0];
-                    updateAssetUI(selectedAsset);
-                    sendAssetToServer(selectedAsset);
+                    // You would call your GAS backend function here: sendAssetToServer(selectedAsset);
+                    updateAssetUI(selectedAsset); // Placeholder UI update
                 }
                 document.getElementById('asset-selector-dialog').close();
             },
@@ -321,49 +341,36 @@
             }
         };
 
-        // --- 4. INITIALIZE IMS SERVICE ---
-        function initializeImsService() {
-            // Check for PureJSSelectors global object before running
-            if (typeof PureJSSelectors !== 'undefined') {
-                imsInstance = PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
-                console.log("IMS Service Registered. Ready for Auth Flow.");
-            } else {
-                console.error("PureJSSelectors library not loaded. Retrying...");
-                // Simple retry mechanism just in case of race condition
-                setTimeout(initializeImsService, 500);
-            }
-        }
+        // Container where the Asset Selector MFE will load
+        const container = document.getElementById('asset-selector-container');
         
-        // --- 5. RENDER FUNCTION (Called by Button) ---
-        function renderAssetSelectorWithAuthFlow() {
-            if (!imsInstance) {
-                showToast("Error", "IMS Service not yet initialized. Please wait a moment.", 'info');
-                return;
-            }
-            
-            // Container where the Asset Selector MFE will load
-            const container = document.getElementById('asset-selector-container');
-            
-            // Use the specialized function for authenticated rendering
-            PureJSSelectors.renderAssetSelectorWithAuthFlow(container, assetSelectorProps, () => {
-                // Callback function: executed immediately after the MFE is mounted/rendered
-                const assetSelectorDialog = document.getElementById('asset-selector-dialog');
-                assetSelectorDialog.showModal();
-            });
-        }
-        
-        // --- 6. UTILITY FUNCTIONS (Your existing logic) ---
-        
-        function updateAssetUI(asset) { /* ... your function logic ... */ }
-        function sendAssetToServer(asset) { /* ... your function logic ... */ }
-        function showToast(title, body, type = 'info') { /* ... your function logic ... */ }
-        function clearAsset() { /* ... your function logic ... */ }
-        function formatBytes(bytes, decimals = 2) { /* ... your function logic ... */ }
+        PureJSSelectors.renderAssetSelectorWithAuthFlow(container, assetSelectorProps, () => {
+            const assetSelectorDialog = document.getElementById('asset-selector-dialog');
+            assetSelectorDialog.showModal();
+        });
+    }
+    
+    // --- 6. UTILITY FUNCTIONS (Your existing logic) ---
+    
+    const assetSelectorDialog = document.getElementById('asset-selector-dialog');
+    const assetSelectorContainer = document.getElementById('asset-selector-container');
+    const selectedAssetPreview = document.getElementById('selectedAssetPreview');
+    const assetPreviewImg = document.getElementById('assetPreviewImg');
+    const assetName = document.getElementById('assetName');
+    const assetMeta = document.getElementById('assetMeta');
+    const adobeDamBox = document.getElementById('adobeDamBox');
+    const damTitle = document.getElementById('damTitle');
 
 
-        // Start the initialization process when the page loads
-        window.onload = initializeImsService;
-        
-    </script>
+    function updateAssetUI(asset) { /* ... your function logic ... */ }
+    function sendAssetToServer(asset) { /* ... your function logic ... */ }
+    function showToast(title, body, type = 'info') { /* ... your function logic ... */ }
+    function clearAsset() { /* ... your function logic ... */ }
+    function formatBytes(bytes, decimals = 2) { /* ... your function logic ... */ }
+
+
+    // Start the initialization process when the page loads
+    window.onload = initializeImsService;
+</script>
 </body>
 </html>
