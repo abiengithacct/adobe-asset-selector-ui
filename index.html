@@ -237,41 +237,66 @@ const CONFIG = {
     }
 
     // Button click: render selector
-    function launchAssetSelector() {
-        if (!imsInstance) {
-            showToast('Error', 'Auth not initialized', 'error');
-            return;
-        }
 
-        const assetProps = {
-            aemHost: CONFIG.AEM_HOST,
-            imsOrg: CONFIG.IMS_ORG,
-            repositoryId: 'crx',
-            env: 'prod',
-            selectMode: 'single',
-            allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-            authService: imsInstance,
 
-            onAssetSelect: (assets) => {
-                if (assets && assets.length > 0) {
-                    updateAssetUI(assets[0]);
-                }
-                document.getElementById('asset-selector-dialog').close();
-            }
-        };
-
-        const container = document.getElementById('asset-selector-container');
-        container.innerHTML = '';
-
-        PureJSSelectors.renderAssetSelectorWithAuthFlow(
-            container,
-            assetProps,
-            () => {
-                console.log('✓ Rendered, opening dialog');
-                document.getElementById('asset-selector-dialog').showModal();
-            }
-        );
+        function launchAssetSelector() {
+    if (!imsInstance) {
+        showToast('Error', 'Auth not initialized', 'error');
+        return;
     }
+
+   /* const assetProps = {
+        aemHost: CONFIG.AEM_HOST,
+        imsOrg: CONFIG.IMS_ORG,
+        repositoryId: '',
+        env: 'prod',
+        selectMode: 'single',
+        allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
+        authService: imsInstance,
+
+        onAssetSelect: (assets) => {
+            if (assets && assets.length > 0) {
+                updateAssetUI(assets[0]);
+            }
+            document.getElementById('asset-selector-dialog').close();
+        }
+    }; */
+
+
+            const assetProps = {
+    imsOrg: CONFIG.IMS_ORG,
+    repositoryId: 'crx',  // Keep as 'crx' for OAuth flow
+    env: 'prod',
+    selectMode: 'single',
+    allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
+    authService: imsInstance,
+    onAssetSelect: (assets) => {
+        if (assets && assets.length > 0) {
+            updateAssetUI(assets[0]);
+        }
+        document.getElementById('asset-selector-dialog').close();
+    }
+};
+
+    // DEBUG: Log what's being sent
+    console.log('📤 Asset Selector Config:', assetProps);
+    console.log('   aemHost:', assetProps.aemHost);
+    console.log('   imsOrg:', assetProps.imsOrg);
+
+    const container = document.getElementById('asset-selector-container');
+    container.innerHTML = '';
+
+    PureJSSelectors.renderAssetSelectorWithAuthFlow(
+        container,
+        assetProps,
+        () => {
+            console.log('✓ Rendered, opening dialog');
+            document.getElementById('asset-selector-dialog').showModal();
+        }
+    );
+}
+
+  
 
     function updateAssetUI(asset) {
         const preview = document.getElementById('selectedAssetPreview');
