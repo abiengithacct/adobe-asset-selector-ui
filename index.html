@@ -675,7 +675,7 @@
     } catch (e) {
         console.error('Failed to register IMS:', e);
     }
-}
+},
             // ========== AUTH MODAL ==========
             openAuthModal() {
                 document.getElementById('authModal').classList.add('open');
@@ -701,7 +701,7 @@
     document.getElementById('authStep1').style.display = 'block';
     document.getElementById('authStep2').style.display = 'none';
     this.openAuthModal();
-}
+},
 
             openSelector() {
                 if (!this.state.imsService) {
@@ -844,7 +844,7 @@ async exchangeCodeForToken(code, verifier) {
         console.error('Token exchange error:', error);
         this.showToast('Error', 'Authentication failed', 'error');
     }
-}
+},
 
             // ========== ASSET UI ==========
             updateUIWithAsset(asset) {
