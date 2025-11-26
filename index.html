@@ -295,108 +295,225 @@
     <div class="toast-container" id="toastContainer"></div>
 
 <script>
-    // Store the IMS instance globally for re-use
-    let imsInstance = null;
-    
-    // --- 1. CONFIGURATION ---
-    const AEM_HOST = 'https://author-p173552-e1855304.adobeaemcloud.com';
-    const IMS_CLIENT_ID = '466f31740dc24133a32506acb2823d3f';
-    
-    // CRITICAL: Use the EXACT GitHub Pages live URL (NO trailing slash in code)
-    const GITHUB_PAGES_REDIRECT_URI = 'https://abiengithacct.github.io/adobe-asset-selector-ui';
-
-
-    // --- 2. IMS PROPERTIES (AUTHENTICATION) ---
-    const imsProps = {
-        // --- FIX: Cleaned up duplicate/malformed object definitions ---
-         imsClientId: IMS_CLIENT_ID,
-    imsEnvironment: "prod", 
-    imsScope: "AdobeID,openid,aem.folders,aem.assets.author",  // ✓ NO spaces
-    redirectUrl: GITHUB_PAGES_REDIRECT_URI,
-    modalMode: true,
-    popUp: true,
-        modalMode: true,
-        popUp: true, 
-
-        onAccessTokenReceived: (token) => {
-            console.log("IMS Token Received successfully.");
-        },
-        onErrorReceived: (type, msg) => {
-            showToast("IMS Authentication Error", `Type: ${type}. Message: ${msg}`, 'error');
-            console.error("IMS Error:", type, msg);
-        } // FIX: Removed semicolon and fixed the misplaced closing brackets
-    };
-
-    // --- 4. INITIALIZE IMS SERVICE ---
-    function initializeImsService() {
-        if (typeof PureJSSelectors !== 'undefined') {
-            imsInstance = PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
-            console.log("IMS Service Registered. Ready for Auth Flow.");
-        } else {
-            console.error("PureJSSelectors library not loaded. Retrying...");
-            setTimeout(initializeImsService, 500);
-        }
-    }
-    
-    // --- 5. RENDER FUNCTION (Called by Button) ---
-    function renderAssetSelectorWithAuthFlow() {
-        if (!imsInstance) {
-            showToast("Error", "IMS Service not yet initialized. Please wait a moment.", 'info');
-            return;
-        }
-        
-        const assetSelectorProps = {
-            aemHost: AEM_HOST,
-            repositoryId: 'crx',
-            env: 'prod',
-            selectMode: 'single',
-            allowedAssetMimeTypes: ["image/png", "image/jpeg", "image/jpg"],
-            authService: imsInstance,
+   const CONFIG = {
+            IMS_CLIENT_ID: '466f31740dc24133a32506acb2823d3f',
+            // CRITICAL: This must match your Adobe Console redirect URI exactly
+            REDIRECT_URI: window.location.origin + window.location.pathname,
+            // Fallback for root domain
+            REDIRECT_URI_FALLBACK: window.location.origin + '/',
             
-            // Handlers for selection events
-            onAssetSelect: (assets) => {
-                if (assets && assets.length > 0) {
-                    const selectedAsset = assets[0];
-                    updateAssetUI(selectedAsset);
-                }
-                document.getElementById('asset-selector-dialog').close();
-            },
-            onError: (error) => {
-                showToast("Asset Selector Error", "Failed to load assets: " + error.details, 'error');
-                console.error("Asset Selector Error:", error);
-            }
+            AEM_HOST: 'https://author-p173552-e1855304.adobeaemcloud.com',
+            IMS_HOST: 'https://ims-na1.adobelogin.com',
+            IMS_TOKEN_ENDPOINT: 'https://ims-na1.adobelogin.com/ims/token/v3',
+            IMS_AUTHORIZE_ENDPOINT: 'https://ims-na1.adobelogin.com/ims/authorize/v2',
+            
+            SCOPES: ['openid', 'AdobeID', 'aem.assets.author', 'aem.folders'],
         };
 
-        // Container where the Asset Selector MFE will load
-        const container = document.getElementById('asset-selector-container');
+        // Store OAuth state for PKCE validation
+        let oauthState = {
+            imsInstance: null,
+            accessToken: null,
+            codeVerifier: null,
+        };
+
+        // ========================================
+        // PKCE HELPER FUNCTIONS
+        // ========================================
         
-        PureJSSelectors.renderAssetSelectorWithAuthFlow(container, assetSelectorProps, () => {
-            const assetSelectorDialog = document.getElementById('asset-selector-dialog');
-            assetSelectorDialog.showModal();
+        function generateCodeChallenge() {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+            let codeVerifier = '';
+            for (let i = 0; i < 128; i++) {
+                codeVerifier += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return codeVerifier;
+        }
+
+        async function generateCodeChallengeSha256(codeVerifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(codeVerifier);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => String.fromCharCode(b)).join('');
+            return btoa(hashHex).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        }
+
+        // ========================================
+        // HANDLE OAUTH CALLBACK (Hash Parameters)
+        // ========================================
+        
+        function handleOAuthCallback() {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get('access_token');
+            const errorParam = params.get('error');
+
+            if (accessToken) {
+                console.log('Access token received from OAuth callback');
+                oauthState.accessToken = accessToken;
+                // Clear URL hash
+                window.history.replaceState({}, document.title, window.location.pathname);
+                initializeImsService();
+                return true;
+            }
+
+            if (errorParam) {
+                showToast('OAuth Error', `${errorParam}: ${params.get('error_description') || 'Unknown error'}`, 'error');
+                console.error('OAuth Error:', errorParam, params.get('error_description'));
+                return false;
+            }
+
+            return false;
+        }
+
+        // ========================================
+        // INITIALIZE IMS SERVICE
+        // ========================================
+        
+        function initializeImsService() {
+            if (typeof PureJSSelectors === 'undefined') {
+                console.error('PureJSSelectors not loaded yet');
+                setTimeout(initializeImsService, 500);
+                return;
+            }
+
+            const imsProps = {
+                imsClientId: CONFIG.IMS_CLIENT_ID,
+                imsScope: CONFIG.SCOPES.join(', '),
+                redirectUrl: CONFIG.REDIRECT_URI,
+                modalMode: true,
+                autoRedirect: false,
+                
+                onAccessTokenReceived: (token) => {
+                    console.log('✓ IMS Token received successfully');
+                    oauthState.accessToken = token;
+                    showToast('Success', 'Connected to Adobe IMS', 'success');
+                },
+                
+                onErrorReceived: (type, msg) => {
+                    showToast('IMS Auth Error', msg, 'error');
+                    console.error('IMS Error:', type, msg);
+                },
+            };
+
+            try {
+                oauthState.imsInstance = PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
+                console.log('✓ IMS Service initialized');
+            } catch (error) {
+                console.error('Failed to initialize IMS:', error);
+                showToast('Error', 'Failed to initialize IMS service', 'error');
+            }
+        }
+
+        // ========================================
+        // RENDER ASSET SELECTOR WITH AUTH FLOW
+        // ========================================
+        
+        function renderAssetSelectorWithAuthFlow() {
+            if (!oauthState.imsInstance) {
+                showToast('Error', 'IMS Service not initialized', 'info');
+                return;
+            }
+
+            const container = document.getElementById('asset-selector-container');
+            const assetSelectorProps = {
+                aemHost: CONFIG.AEM_HOST,
+                repositoryId: 'crx',
+                env: 'prod',
+                selectMode: 'single',
+                allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
+                authService: oauthState.imsInstance,
+                
+                onAssetSelect: (assets) => {
+                    if (assets && assets.length > 0) {
+                        const selectedAsset = assets[0];
+                        updateAssetUI(selectedAsset);
+                        sendAssetToServer(selectedAsset);
+                    }
+                    document.getElementById('asset-selector-dialog').close();
+                },
+                
+                onError: (error) => {
+                    showToast('Asset Selector Error', error.details || error.message || 'Unknown error', 'error');
+                    console.error('Asset Selector Error:', error);
+                },
+            };
+
+            PureJSSelectors.renderAssetSelectorWithAuthFlow(container, assetSelectorProps, () => {
+                document.getElementById('asset-selector-dialog').showModal();
+            });
+        }
+
+        // ========================================
+        // UTILITY FUNCTIONS
+        // ========================================
+        
+        function updateAssetUI(asset) {
+            const preview = document.getElementById('selectedAssetPreview');
+            const img = document.getElementById('assetPreviewImg');
+            const name = document.getElementById('assetName');
+            const meta = document.getElementById('assetMeta');
+
+            img.src = asset.downloadUrl || asset.url || '';
+            name.textContent = asset.name || 'Unknown Asset';
+            meta.textContent = `Size: ${formatBytes(asset.size || 0)} | Type: ${asset.mimeType || 'unknown'}`;
+            
+            preview.classList.add('active');
+            
+            const damBox = document.getElementById('adobeDamBox');
+            damBox.classList.add('connected');
+            document.getElementById('damTitle').textContent = '✓ Connected to Adobe DAM';
+        }
+
+        function sendAssetToServer(asset) {
+            console.log('Selected Asset:', asset);
+            // Send to your backend if needed
+            // Example: fetch('/api/asset', { method: 'POST', body: JSON.stringify(asset) })
+        }
+
+        function clearAsset() {
+            document.getElementById('selectedAssetPreview').classList.remove('active');
+            document.getElementById('adobeDamBox').classList.remove('connected');
+            document.getElementById('damTitle').textContent = 'Select an image from Adobe DAM';
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function showToast(title, body, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<strong>${title}</strong><span>${body}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // ========================================
+        // INITIALIZATION ON PAGE LOAD
+        // ========================================
+        
+        window.addEventListener('load', () => {
+            // Check for OAuth callback
+            const isCallback = handleOAuthCallback();
+            
+            // Always initialize IMS service
+            initializeImsService();
+
+            // Debug: Log actual URLs
+            console.log('Current Origin:', window.location.origin);
+            console.log('Current Pathname:', window.location.pathname);
+            console.log('Configured Redirect URI:', CONFIG.REDIRECT_URI);
+            console.log('IMS Client ID:', CONFIG.IMS_CLIENT_ID);
         });
-    }
-    
-    // --- 6. UTILITY FUNCTIONS (Your existing logic) ---
-    
-    const assetSelectorDialog = document.getElementById('asset-selector-dialog');
-    const assetSelectorContainer = document.getElementById('asset-selector-container');
-    const selectedAssetPreview = document.getElementById('selectedAssetPreview');
-    const assetPreviewImg = document.getElementById('assetPreviewImg');
-    const assetName = document.getElementById('assetName');
-    const assetMeta = document.getElementById('assetMeta');
-    const adobeDamBox = document.getElementById('adobeDamBox');
-    const damTitle = document.getElementById('damTitle');
-
-
-    function updateAssetUI(asset) { /* ... your function logic ... */ }
-    function sendAssetToServer(asset) { /* ... your function logic ... */ }
-    function showToast(title, body, type = 'info') { /* ... your function logic ... */ }
-    function clearAsset() { /* ... your function logic ... */ }
-    function formatBytes(bytes, decimals = 2) { /* ... your function logic ... */ }
-
-
-    // Start the initialization process when the page loads
-    window.onload = initializeImsService;
-</script>
+        
+    </script>
 </body>
 </html>
