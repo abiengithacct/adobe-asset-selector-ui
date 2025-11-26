@@ -7,9 +7,9 @@
     <title>MoEngage - Create Push Campaign (Adobe DAM)</title>
     
     <style>
-        /* (CSS STYLES REMAINS THE SAME AS PREVIOUSLY PROVIDED) */
+        /* (CSS STYLES - No changes needed here) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacMacFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f5f7fa; color: #1a1a1a; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f5f7fa; color: #1a1a1a; }
         .moe-header { background: #2c3e50; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .moe-logo { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
         .main-layout { display: flex; min-height: calc(100vh - 50px); }
@@ -51,13 +51,15 @@
         .btn-remove { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
         .btn-remove:hover { background: #c0392b; }
         
-        /* #asset-selector-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center; }*/
         #asset-selector-dialog { background:white; border-radius:12px; width:90vw; height:90vh; max-width:1600px; display:flex; flex-direction:column; box-shadow:0 25px 80px rgba(0,0,0,0.4); }
+        #asset-selector-dialog::backdrop { background: rgba(0,0,0,0.8); }
         #asset-selector-container { flex:1; overflow:hidden; background:white; }
-        /*.dialog-header { height: 64px; background: linear-gradient(135deg, #2c3e50, #34495e); color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; border-radius: 12px 12px 0 0; }*/
+        
+        .dialog-header { height: 64px; background: linear-gradient(135deg, #2c3e50, #34495e); color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; border-radius: 12px 12px 0 0; }
         .dialog-title { font-size: 18px; font-weight: 600; }
         .dialog-close { background: rgba(255,255,255,0.1); border: none; color: white; font-size: 28px; cursor: pointer; width: 40px; height: 40px; border-radius: 8px; transition: all 0.2s; }
         .dialog-close:hover { background: rgba(255,255,255,0.2); }
+        
         .toast-container { position: fixed; top: 20px; right: 20px; z-index: 11000; display: flex; flex-direction: column; gap: 10px; }
         .toast { min-width: 320px; background: white; padding: 16px 20px; border-left: 4px solid #3498db; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 6px; animation: slideInRight 0.3s; }
         .toast.success { border-left-color: #27ae60; }
@@ -65,12 +67,13 @@
         .toast.info { border-left-color: #3498db; }
         .toast strong { display: block; margin-bottom: 4px; font-size: 14px; }
         .toast span { font-size: 13px; color: #7f8c8d; }
+        
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
         @media (max-width: 768px) { .main-layout { flex-direction: column; } .sidebar { width: 100%; } .image-options { flex-direction: column; } }
     </style>
     
-<script id="asset-selector-script" src="https://experience.adobe.com/solutions/CQ-assets-selectors/static-assets/resources/assets-selectors.js"></script>
+    <script id="asset-selector-script" src="https://experience.adobe.com/solutions/CQ-assets-selectors/static-assets/resources/assets-selectors.js"></script>
 </head>
 <body>
 
@@ -83,66 +86,18 @@
             <button class="create-new-btn">
                 <span style="font-size:18px;">+</span> Create New
             </button>
-            
-            <div class="sidebar-item">
-                <span class="icon">📊</span> Dashboards
-            </div>
-            <div class="sidebar-item">
-                <span class="icon">📈</span> Analyze
-            </div>
-            <div class="sidebar-item">
-                <span class="icon">👥</span> Segment
-            </div>
-            <div class="sidebar-item active">
-                <span class="icon">📢</span> Engage
-            </div>
-            <div class="sidebar-item">
-                <span class="icon">📬</span> Inform
-            </div>
-            <div class="sidebar-item">
-                <span class="icon">🎨</span> Personalize
-            </div>
+            <div class="sidebar-item active"><span class="icon">📢</span> Engage</div>
         </div>
 
         <div class="main-content">
             <div class="page-header">
-                <div class="breadcrumb">Engage › Push Notifications › Create Campaign</div>
                 <h1 class="page-title">Create Push Notification</h1>
             </div>
 
             <div class="content-card">
-                <div class="rich-media-section">
-                    <h2 class="section-title">Rich media</h2>
-                    <div class="gif-option">
-                        <input type="checkbox" id="useGif">
-                        <label for="useGif" style="font-size:14px; color:#2c3e50;">Use GIF for Android 14+</label>
-                        <span class="new-badge">New</span>
-                    </div>
-                </div>
-
                 <div class="image-section">
                     <h2 class="section-title">Image</h2>
                     
-                    <div class="image-options">
-                        <div class="radio-option">
-                            <input type="radio" name="imageSource" id="imageUrl">
-                            <label for="imageUrl">Image URL</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" name="imageSource" id="uploadImage">
-                            <label for="uploadImage">Upload image</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" name="imageSource" id="merlinAI">
-                            <label for="merlinAI">Merlin AI Designer</label>
-                            <span class="version-badge">v2.0</span>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" name="imageSource" id="uploadCMS" checked>
-                            <label for="uploadCMS">Upload from CMS</label>
-                        </div>
-                    </div>
-
                     <div class="adobe-dam-box" id="adobeDamBox">
                         <div class="adobe-dam-title" id="damTitle">Select an image from Adobe DAM</div>
                         <button class="connect-dam-btn" id="connectDamBtn" onclick="launchAssetSelector()">Connect to DAM</button>
@@ -158,44 +113,41 @@
                             <button class="btn-remove" onclick="clearAsset()">Remove</button>
                         </div>
                     </div>
-
-                    <div class="image-specs">
-                        Use image size of around 25 KB. Recommended aspect ratio (width:height) 2.9:1 with buttons, 2.8:1 without buttons.<br>
-                        Supported File types: png, jpeg, jpg
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-<dialog id="asset-selector-dialog" style="width: 90vw; height: 90vh; max-width: 1600px; padding: 0; border-radius: 12px; margin: auto;">
-    <div id="asset-selector-container" style="height: 100%; overflow: hidden;"></div>
-</dialog>
+    <dialog id="asset-selector-dialog">
+        <div class="dialog-header">
+            <span class="dialog-title">📁 Adobe Experience Manager</span>
+            <button class="dialog-close" onclick="closeAssetSelector()">×</button>
+        </div>
+        <div id="asset-selector-container"></div>
+    </dialog>
 
     <div class="toast-container" id="toastContainer"></div>
 
 <script>
-const CONFIG = {
-    // Confirmed from your JSON "API_KEY"
-    CLIENT_ID: '466f31740dc24133a32506acb2823d3f',
-    
-    // Confirmed from your JSON "IMS_ORG"
-    IMS_ORG: '9FA30EC862A9A1430A495E1F@AdobeOrg',
-    
-    // Confirmed from your URL "repoId"
-    AEM_HOST: 'https://author-p173552-e1855304.adobeaemcloud.com',
-    
-    // Keep this as is (Standard for Asset Selector)
-    SCOPE: 'AdobeID,openid,aem.folders,aem.assets.author',
-    
-    // Your GitHub URL (Must match what is whitelisted in Adobe Developer Console)
-    REDIRECT_URI: 'https://abiengithacct.github.io/adobe-asset-selector-ui',
-    
-    // Confirmed from your JSON "IMS"
-    IMS_AUTH_URL: 'https://ims-na1.adobelogin.com/ims/authorize/v2'
-};
+    const CONFIG = {
+        CLIENT_ID: '466f31740dc24133a32506acb2823d3f',
+        REDIRECT_URI: 'https://abiengithacct.github.io/adobe-asset-selector-ui',
+        AEM_HOST: 'https://author-p173552-e1855304.adobeaemcloud.com',
+        SCOPE: 'AdobeID,openid,aem.folders,aem.assets.author',
+        IMS_ORG: '9FA30EC862A9A1430A495E1F@AdobeOrg',
+        IMS_AUTH_URL: 'https://ims-na1.adobelogin.com/ims/authorize/v2'
+    };
 
     let imsInstance = null;
+
+    // Corrected Modal Logic for <dialog> element
+    function openAssetSelectorModal() {
+        document.getElementById('asset-selector-dialog').showModal();
+    }
+
+    function closeAssetSelector() {
+        document.getElementById('asset-selector-dialog').close();
+    }
 
     function showToast(title, body, type = 'info') {
         const toastContainer = document.getElementById('toastContainer');
@@ -206,13 +158,14 @@ const CONFIG = {
         setTimeout(() => toast.remove(), 4000);
     }
 
-    // Register auth on page load
+    // 1. Register Auth on Page Load
     function initializeAuth() {
         const imsProps = {
             imsClientId: CONFIG.CLIENT_ID,
             imsScope: CONFIG.SCOPE,
             redirectUrl: CONFIG.REDIRECT_URI,
             modalMode: true,
+            imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
             
             onImsServiceInitialized: (service) => {
                 console.log('✓ IMS initialized');
@@ -220,7 +173,9 @@ const CONFIG = {
             },
             onAccessTokenReceived: (token) => {
                 console.log('✓ Token received');
-                showToast('Success', 'Authenticated', 'success');
+                showToast('Success', 'Authenticated with Adobe', 'success');
+                // Clean URL
+                window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI);
             },
             onErrorReceived: (type, msg) => {
                 console.error('✗ Auth error:', type, msg);
@@ -236,82 +191,80 @@ const CONFIG = {
         }
     }
 
-    // Button click: render selector
+    // 2. Render Selector on Button Click
+    function launchAssetSelector() {
+        if (!imsInstance) {
+            showToast('Error', 'Auth not initialized', 'error');
+            initializeAuth(); // Attempt re-init
+            return;
+        }
 
+        const assetProps = {
+            //aemHost: CONFIG.AEM_HOST,
+            imsOrg: CONFIG.IMS_ORG,
+            // repositoryId REMOVED to allow SDK to discover the correct environment
+            env: 'prod',
+            selectMode: 'single',
+            allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
+            authService: imsInstance,
 
-        function launchAssetSelector() {
-    if (!imsInstance) {
-        showToast('Error', 'Auth not initialized', 'error');
-        return;
-    }
-
-   /* const assetProps = {
-        aemHost: CONFIG.AEM_HOST,
-        imsOrg: CONFIG.IMS_ORG,
-        repositoryId: '',
-        env: 'prod',
-        selectMode: 'single',
-        allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-        authService: imsInstance,
-
-        onAssetSelect: (assets) => {
-            if (assets && assets.length > 0) {
-                updateAssetUI(assets[0]);
+            onAssetSelect: (assets) => {
+                if (assets && assets.length > 0) {
+                    updateAssetUI(assets[0]);
+                }
+                closeAssetSelector();
             }
-            document.getElementById('asset-selector-dialog').close();
-        }
-    }; */
+        };
 
+        console.log('📤 Launching Selector:', assetProps);
 
-            const assetProps = {
-    imsOrg: CONFIG.IMS_ORG,
-    repositoryId: 'crx',  // Keep as 'crx' for OAuth flow
-    env: 'prod',
-    selectMode: 'single',
-    allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-    authService: imsInstance,
-    onAssetSelect: (assets) => {
-        if (assets && assets.length > 0) {
-            updateAssetUI(assets[0]);
-        }
-        document.getElementById('asset-selector-dialog').close();
+        const container = document.getElementById('asset-selector-container');
+        container.innerHTML = '';
+
+        PureJSSelectors.renderAssetSelectorWithAuthFlow(
+            container,
+            assetProps,
+            () => {
+                console.log('✓ Rendered, opening dialog');
+                openAssetSelectorModal();
+            }
+        );
     }
-};
-
-    // DEBUG: Log what's being sent
-    console.log('📤 Asset Selector Config:', assetProps);
-    console.log('   aemHost:', assetProps.aemHost);
-    console.log('   imsOrg:', assetProps.imsOrg);
-
-    const container = document.getElementById('asset-selector-container');
-    container.innerHTML = '';
-
-    PureJSSelectors.renderAssetSelectorWithAuthFlow(
-        container,
-        assetProps,
-        () => {
-            console.log('✓ Rendered, opening dialog');
-            document.getElementById('asset-selector-dialog').showModal();
-        }
-    );
-}
-
-  
 
     function updateAssetUI(asset) {
         const preview = document.getElementById('selectedAssetPreview');
-        document.getElementById('assetPreviewImg').src = asset.uri || asset.path || '';
+        const img = document.getElementById('assetPreviewImg');
+        
+        // Robust image URL retrieval
+        let imgSrc = asset.uri || asset.path;
+        if (asset._links && asset._links['http://ns.adobe.com/adobecloud/rel/rendition']) {
+             imgSrc = asset._links['http://ns.adobe.com/adobecloud/rel/rendition'][0].href;
+        }
+
+        img.src = imgSrc || '';
         document.getElementById('assetName').textContent = asset.name || 'Unknown';
         document.getElementById('assetMeta').textContent = `${asset.mimeType || 'unknown'}`;
+        
         preview.classList.add('active');
         document.getElementById('adobeDamBox').classList.add('connected');
+        document.getElementById('damTitle').textContent = '✓ Asset Selected';
         showToast('Success', asset.name + ' selected', 'success');
     }
 
     function clearAsset() {
         document.getElementById('selectedAssetPreview').classList.remove('active');
         document.getElementById('adobeDamBox').classList.remove('connected');
+        document.getElementById('damTitle').textContent = 'Select an image from Adobe DAM';
         showToast('Info', 'Asset cleared', 'info');
+    }
+
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 
     // Initialize on page load
