@@ -309,10 +309,12 @@
     // --- 2. IMS PROPERTIES (AUTHENTICATION) ---
     const imsProps = {
         // --- FIX: Cleaned up duplicate/malformed object definitions ---
-        imsClientId: IMS_CLIENT_ID,
-        imsEnvironment: "prod", 
-        imsScope: "AdobeID, openid, aem.folders, aem.assets.author",
-        redirectUrl: GITHUB_PAGES_REDIRECT_URI,
+         imsClientId: IMS_CLIENT_ID,
+    imsEnvironment: "prod", 
+    imsScope: "AdobeID,openid,aem.folders,aem.assets.author",  // ✓ NO spaces
+    redirectUrl: GITHUB_PAGES_REDIRECT_URI,
+    modalMode: true,
+    popUp: true,
         modalMode: true,
         popUp: true, 
 
