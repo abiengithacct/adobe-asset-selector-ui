@@ -1,398 +1,499 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoEngage - Create Push Campaign</title>
     
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            background: #f9fafb; 
-            color: #1f2937; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        /* HEADER */
-        .moe-header { 
-            background: white; 
-            color: #1f2937; 
-            padding: 16px 24px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .moe-logo { 
-            font-size: 18px; 
-            font-weight: 700; 
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f9fafb;
             color: #1f2937;
         }
-        
-        /* LAYOUT */
-        .main-layout { display: flex; min-height: calc(100vh - 57px); }
-        
-        /* SIDEBAR */
-        .sidebar { 
-            width: 260px; 
-            background: white; 
-            color: #4b5563; 
-            padding: 24px 0; 
-            flex-shrink: 0;
-            border-right: 1px solid #e5e7eb;
+
+        /* HEADER */
+        .moe-header {
+            background: white;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .create-new-btn { 
-            background: #3b82f6; 
-            color: white; 
-            border: none; 
-            padding: 12px 20px; 
+
+        .moe-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        /* LAYOUT */
+        .main-layout {
+            display: flex;
+            min-height: calc(100vh - 57px);
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background: white;
+            padding: 24px 0;
+            border-right: 1px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        .create-new-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 20px;
             margin: 0 12px 16px 12px;
-            font-size: 14px; 
-            font-weight: 600; 
-            cursor: pointer; 
             width: calc(100% - 24px);
+            font-size: 14px;
+            font-weight: 600;
             border-radius: 8px;
+            cursor: pointer;
             transition: background 0.2s;
         }
-        .create-new-btn:hover { background: #2563eb; }
-        
-        .sidebar-item { 
-            padding: 12px 20px; 
-            color: #6b7280; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            font-size: 14px;
-            transition: all 0.2s;
-            margin: 4px 12px;
-            border-radius: 8px;
+
+        .create-new-btn:hover {
+            background: #2563eb;
         }
-        .sidebar-item:hover { background: #f3f4f6; color: #1f2937; }
-        .sidebar-item.active { 
-            background: #eff6ff; 
-            color: #3b82f6; 
+
+        .sidebar-item {
+            padding: 12px 20px;
+            margin: 4px 12px;
+            color: #6b7280;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-item:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .sidebar-item.active {
+            background: #eff6ff;
+            color: #3b82f6;
             font-weight: 600;
         }
-        
+
         /* MAIN CONTENT */
-        .main-content { 
-            flex: 1; 
-            padding: 32px; 
-            background: #f9fafb; 
-            overflow-y: auto; 
+        .main-content {
+            flex: 1;
+            padding: 32px;
+            background: #f9fafb;
+            overflow-y: auto;
         }
-        
-        .page-header { margin-bottom: 24px; }
-        .page-title { 
-            font-size: 28px; 
-            font-weight: 700; 
-            color: #1f2937; 
-            margin-bottom: 8px; 
+
+        .page-header {
+            margin-bottom: 24px;
         }
-        .breadcrumb { 
-            font-size: 13px; 
-            color: #9ca3af; 
+
+        .breadcrumb {
+            font-size: 13px;
+            color: #9ca3af;
+            margin-bottom: 8px;
         }
-        
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
         /* CONTENT CARD */
-        .content-card { 
-            background: white; 
-            border-radius: 12px; 
-            padding: 32px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
             border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        
-        .section-title { 
-            font-size: 16px; 
-            font-weight: 600; 
-            color: #1f2937; 
-            margin-bottom: 20px; 
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 20px;
         }
-        
+
         /* IMAGE OPTIONS */
-        .image-options { 
-            display: flex; 
-            gap: 16px; 
-            margin-bottom: 24px; 
-            flex-wrap: wrap; 
+        .image-options {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
         }
-        .radio-option { 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-            cursor: pointer; 
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
         }
-        .radio-option input[type="radio"] { 
-            width: 16px; 
-            height: 16px; 
-            cursor: pointer; 
+
+        .radio-option input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
             accent-color: #3b82f6;
         }
-        .radio-option label { 
-            cursor: pointer; 
-            font-size: 14px; 
+
+        .radio-option label {
+            font-size: 14px;
             color: #374151;
+            cursor: pointer;
         }
-        
+
         /* ADOBE DAM BOX */
-        .adobe-dam-box { 
-            border: 2px solid #e5e7eb; 
-            background: #fafbfc; 
-            border-radius: 12px; 
-            padding: 48px; 
-            text-align: center; 
+        .adobe-dam-box {
+            border: 2px solid #e5e7eb;
+            background: #fafbfc;
+            border-radius: 12px;
+            padding: 48px;
+            text-align: center;
             margin-bottom: 24px;
             transition: all 0.3s;
         }
+
         .adobe-dam-box:hover {
             border-color: #d1d5db;
             background: #f3f4f6;
         }
-        .adobe-dam-box.connected { 
-            border-color: #10b981; 
+
+        .adobe-dam-box.connected {
+            border-color: #10b981;
             background: #ecfdf5;
         }
-        .adobe-dam-title { 
-            font-size: 16px; 
-            font-weight: 500; 
-            color: #374151; 
-            margin-bottom: 16px; 
+
+        .adobe-dam-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 16px;
         }
-        .connect-dam-btn { 
-            background: #3b82f6; 
-            color: white; 
-            border: none; 
-            padding: 12px 32px; 
-            border-radius: 8px; 
-            font-size: 14px; 
+
+        .connect-dam-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 600;
-            cursor: pointer; 
+            cursor: pointer;
             transition: all 0.2s;
         }
-        .connect-dam-btn:hover { 
+
+        .connect-dam-btn:hover {
             background: #2563eb;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
-        
+
         /* ASSET PREVIEW */
-        .selected-asset-preview { 
-            border: 1px solid #e5e7eb; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            margin-top: 20px; 
-            display: none; 
-            animation: slideIn 0.3s;
+        .selected-asset-preview {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 20px;
+            display: none;
+            animation: slideIn 0.3s ease-out;
         }
-        .selected-asset-preview.active { display: block; }
-        .asset-preview-img { 
-            width: 100%; 
-            max-height: 300px; 
-            object-fit: cover; 
-            display: block; 
+
+        .selected-asset-preview.active {
+            display: block;
         }
-        .asset-preview-info { 
-            padding: 16px; 
-            background: white; 
+
+        .asset-preview-img {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .asset-preview-info {
+            padding: 16px;
+            background: white;
             border-top: 1px solid #e5e7eb;
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .asset-name { 
-            font-size: 14px; 
-            font-weight: 600; 
-            color: #1f2937; 
+
+        .asset-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
         }
-        .asset-meta { 
-            font-size: 12px; 
-            color: #9ca3af; 
-            margin-top: 4px; 
+
+        .asset-meta {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 4px;
         }
-        .btn-remove { 
-            background: #ef4444; 
-            color: white; 
-            border: none; 
-            padding: 8px 16px; 
-            border-radius: 6px; 
-            font-size: 12px; 
-            cursor: pointer; 
+
+        .btn-remove {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-remove:hover { background: #dc2626; }
-        
-        /* ADOBE AUTH MODAL */
-        #auth-modal { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.5); 
-            z-index: 12000; 
-            align-items: center; 
-            justify-content: center; 
+
+        .btn-remove:hover {
+            background: #dc2626;
         }
-        .auth-card { 
-            background: white; 
-            border-radius: 16px; 
-            width: 420px; 
-            padding: 40px; 
-            text-align: center; 
+
+        /* AUTH MODAL */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 12000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-modal.open {
+            display: flex;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: 16px;
+            width: 420px;
+            max-width: 90vw;
+            padding: 40px;
+            text-align: center;
             box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            animation: slideUp 0.3s;
+            animation: slideUp 0.3s ease-out;
         }
-        .auth-icon { 
-            width: 72px; 
-            height: 72px; 
-            background: linear-gradient(135deg, #f59e0b, #eb1000); 
-            color: white; 
-            border-radius: 16px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 32px; 
-            font-weight: bold; 
+
+        .auth-icon {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, #f59e0b, #eb1000);
+            color: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
             margin: 0 auto 24px;
             box-shadow: 0 4px 12px rgba(235, 16, 0, 0.2);
         }
-        .auth-title { 
-            font-size: 22px; 
-            font-weight: 700; 
-            color: #1f2937; 
-            margin-bottom: 8px; 
+
+        .auth-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
         }
-        .auth-desc { 
-            font-size: 14px; 
-            color: #6b7280; 
-            margin-bottom: 28px; 
-            line-height: 1.6; 
+
+        .auth-desc {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 28px;
+            line-height: 1.6;
         }
-        .btn-adobe-auth { 
-            background: #eb1000; 
-            color: white; 
-            border: none; 
-            padding: 14px 24px; 
-            border-radius: 8px; 
-            font-size: 15px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            width: 100%; 
+
+        .btn-adobe-auth {
+            background: #eb1000;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
             transition: all 0.2s;
             box-shadow: 0 4px 12px rgba(235, 16, 0, 0.2);
             margin-bottom: 12px;
         }
-        .btn-adobe-auth:hover { 
+
+        .btn-adobe-auth:hover {
             background: #c90e00;
             transform: translateY(-1px);
             box-shadow: 0 6px 16px rgba(235, 16, 0, 0.3);
         }
-        .auth-cancel { 
-            font-size: 13px; 
-            color: #9ca3af; 
-            cursor: pointer; 
+
+        .auth-cancel {
+            font-size: 13px;
+            color: #9ca3af;
+            cursor: pointer;
             transition: color 0.2s;
         }
-        .auth-cancel:hover { color: #6b7280; }
-        
 
-        #asset-selector-dialog {
-    background: white;
-    border-radius: 12px;
-    width: 85vw;           /* Reduced from 90vw */
-    height: 80vh;          /* Reduced from 90vh so it fits */
-    max-width: 1400px;
-    max-height: 900px;     /* Safety limit */
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 25px 80px rgba(0,0,0,0.4);
-    padding: 0;
-    border: none;
-    margin: auto;          /* Critical for native <dialog> centering */
-}
-        #asset-selector-dialog::backdrop { 
-            background: rgba(0,0,0,0.6); 
+        .auth-cancel:hover {
+            color: #6b7280;
         }
-        #asset-selector-container { 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden; 
+
+        /* DIALOG */
+        dialog#asset-selector-dialog {
+            border: none;
+            border-radius: 12px;
+            padding: 0;
+            width: 85vw;
+            height: 80vh;
+            max-width: 1400px;
+            max-height: 900px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+        }
+
+        dialog#asset-selector-dialog::backdrop {
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        #asset-selector-container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             background: white;
         }
-        .dialog-close-btn { 
-            position: absolute; 
-            top: 16px; 
-            right: 16px; 
-            background: white; 
-            border: 1px solid #d1d5db; 
-            border-radius: 8px; 
-            width: 36px; 
-            height: 36px; 
-            cursor: pointer; 
-            font-size: 20px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 100; 
+
+        .dialog-close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: all 0.2s;
         }
-        .dialog-close-btn:hover { 
-            background: #f3f4f6; 
+
+        .dialog-close-btn:hover {
+            background: #f3f4f6;
             border-color: #9ca3af;
         }
-        
+
         /* TOAST */
-        .toast-container { 
-            position: fixed; 
-            top: 24px; 
-            right: 24px; 
-            z-index: 11000; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px; 
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 11000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
         }
-        .toast { 
-            min-width: 320px; 
-            background: white; 
-            padding: 14px 16px; 
-            border-left: 4px solid #3b82f6; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-            border-radius: 8px; 
-            animation: slideInRight 0.3s;
+
+        .toast {
+            min-width: 320px;
+            background: white;
+            padding: 14px 16px;
+            border-left: 4px solid #3b82f6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            animation: slideInRight 0.3s ease-out;
+            pointer-events: auto;
         }
-        .toast.success { border-left-color: #10b981; }
-        .toast.error { border-left-color: #ef4444; }
-        .toast strong { 
-            display: block; 
-            margin-bottom: 2px; 
+
+        .toast.success {
+            border-left-color: #10b981;
+        }
+
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+
+        .toast strong {
+            display: block;
             font-size: 13px;
             color: #1f2937;
+            margin-bottom: 2px;
         }
-        .toast span { 
-            font-size: 12px; 
-            color: #6b7280; 
+
+        .toast span {
+            font-size: 12px;
+            color: #6b7280;
         }
-        
-        @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        @media (max-width: 768px) { 
-            .main-layout { flex-direction: column; } 
-            .sidebar { width: 100%; }
-            .auth-card { width: 90%; }
+
+        /* ANIMATIONS */
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .main-layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .auth-card {
+                width: 90vw;
+            }
+
+            dialog#asset-selector-dialog {
+                width: 95vw;
+                height: 90vh;
+            }
         }
     </style>
-    
+
     <script src="https://experience.adobe.com/solutions/CQ-assets-selectors/static-assets/resources/assets-selectors.js"></script>
 </head>
 <body>
-
     <div class="moe-header">
         <div class="moe-logo">MoEngage</div>
     </div>
@@ -416,17 +517,29 @@
 
             <div class="content-card">
                 <h2 class="section-title">Image</h2>
-                
+
                 <div class="image-options">
-                    <div class="radio-option"><input type="radio" name="imageSource" id="imageUrl"><label for="imageUrl">Image URL</label></div>
-                    <div class="radio-option"><input type="radio" name="imageSource" id="uploadImage"><label for="uploadImage">Upload image</label></div>
-                    <div class="radio-option"><input type="radio" name="imageSource" id="merlinAI"><label for="merlinAI">Merlin AI Designer</label></div>
-                    <div class="radio-option"><input type="radio" name="imageSource" id="uploadCMS" checked><label for="uploadCMS">Upload from CMS</label></div>
+                    <div class="radio-option">
+                        <input type="radio" name="imageSource" id="imageUrl">
+                        <label for="imageUrl">Image URL</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="imageSource" id="uploadImage">
+                        <label for="uploadImage">Upload image</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="imageSource" id="merlinAI">
+                        <label for="merlinAI">Merlin AI Designer</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="imageSource" id="uploadCMS" checked>
+                        <label for="uploadCMS">Upload from CMS</label>
+                    </div>
                 </div>
 
                 <div class="adobe-dam-box" id="adobeDamBox">
                     <div class="adobe-dam-title">Select an image from Adobe DAM</div>
-                    <button class="connect-dam-btn" onclick="handleConnectClick()">Connect to DAM</button>
+                    <button class="connect-dam-btn" onclick="app.handleConnectClick()">Connect to DAM</button>
                 </div>
 
                 <div class="selected-asset-preview" id="selectedAssetPreview">
@@ -436,174 +549,227 @@
                             <div class="asset-name" id="assetName">Asset Name</div>
                             <div class="asset-meta" id="assetMeta"></div>
                         </div>
-                        <button class="btn-remove" onclick="clearAsset()">Remove</button>
+                        <button class="btn-remove" onclick="app.clearAsset()">Remove</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="auth-modal">
+    <div class="auth-modal" id="authModal">
         <div class="auth-card">
             <div class="auth-icon">A</div>
             <h3 class="auth-title">Sign in with Adobe</h3>
             <p class="auth-desc">Access your Adobe Experience Manager assets securely</p>
-            <button class="btn-adobe-auth" onclick="triggerAdobeLogin()">Sign in with Adobe</button>
-            <div class="auth-cancel" onclick="document.getElementById('auth-modal').style.display='none'">Cancel</div>
+            <button class="btn-adobe-auth" onclick="app.startAuth()">Sign in with Adobe</button>
+            <div class="auth-cancel" onclick="app.closeAuthModal()">Cancel</div>
         </div>
     </div>
 
     <dialog id="asset-selector-dialog">
-        <button class="dialog-close-btn" onclick="closeDialog()">×</button>
+        <button class="dialog-close-btn" onclick="app.closeSelector()">×</button>
         <div id="asset-selector-container"></div>
     </dialog>
 
     <div class="toast-container" id="toastContainer"></div>
 
-<script>
-    const CONFIG = {
-        CLIENT_ID: '466f31740dc24133a32506acb2823d3f',
-        REDIRECT_URI: 'https://abiengithacct.github.io/adobe-asset-selector-ui',
-        SCOPE: 'AdobeID,openid,aem.folders,aem.assets.author',
-        IMS_ORG: '9FA30EC862A9A1430A495E1F@AdobeOrg',
-        IMS_AUTH_URL: 'https://ims-na1.adobelogin.com/ims/authorize/v2'
-    };
+    <script>
+        // APP STATE & CONFIG
+        const CONFIG = {
+            CLIENT_ID: '466f31740dc24133a32506acb2823d3f',
+            REDIRECT_URI: 'https://abiengithacct.github.io/adobe-asset-selector-ui',
+            SCOPE: 'AdobeID,openid,aem.folders,aem.assets.author',
+            IMS_ORG: '9FA30EC862A9A1430A495E1F@AdobeOrg',
+            IMS_AUTH_URL: 'https://ims-na1.adobelogin.com/ims/authorize/v2'
+        };
 
-    let imsInstance = null;
-    let isAuthenticated = false;
+        const app = {
+            state: {
+                imsService: null,
+                isAuthenticated: false,
+                toastQueue: [],
+                selectorOpen: false
+            },
 
-    function showToast(title, body, type = 'info') {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.innerHTML = `<strong>${title}</strong><span>${body}</span>`;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 4000);
-    }
+            // ========== INITIALIZATION ==========
+            init() {
+                window.addEventListener('load', () => this.setupIMS());
+            },
 
-    function initApp() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const hasCode = urlParams.get('code');
+            setupIMS() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const hasCode = urlParams.get('code');
 
-        const imsProps = {
-            imsClientId: CONFIG.CLIENT_ID,
-            imsScope: CONFIG.SCOPE,
-            redirectUrl: CONFIG.REDIRECT_URI,
-            modalMode: true,
-            imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
-            
-            onImsServiceInitialized: (service) => {
-                console.log('✓ IMS Ready');
-                imsInstance = service;
-                if (hasCode) {
-                    isAuthenticated = true;
-                    renderSelector();
+                const imsProps = {
+                    imsClientId: CONFIG.CLIENT_ID,
+                    imsScope: CONFIG.SCOPE,
+                    redirectUrl: CONFIG.REDIRECT_URI,
+                    modalMode: true,
+                    imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
+
+                    onImsServiceInitialized: (service) => {
+                        console.log('✓ IMS Service Initialized');
+                        this.state.imsService = service;
+                        if (hasCode) {
+                            this.state.isAuthenticated = true;
+                            window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI);
+                        }
+                    },
+
+                    onAccessTokenReceived: (token) => {
+                        console.log('✓ Access Token Received');
+                        this.state.isAuthenticated = true;
+                    },
+
+                    onErrorReceived: (type, msg) => {
+                        console.error('IMS Error:', type, msg);
+                        this.showToast('Error', msg || type, 'error');
+                    }
+                };
+
+                try {
+                    PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
+                } catch (e) {
+                    console.error('Failed to register IMS:', e);
+                    this.showToast('Error', 'Failed to initialize Adobe SDK', 'error');
                 }
             },
-            onAccessTokenReceived: (token) => {
-                console.log('✓ Token Received');
-                isAuthenticated = true;
-                showToast('Success', 'Authenticated with Adobe', 'success');
-                window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI);
+
+            // ========== AUTH MODAL ==========
+            openAuthModal() {
+                document.getElementById('authModal').classList.add('open');
             },
-            onErrorReceived: (type, msg) => {
-                console.error('Auth Error:', type, msg);
-                showToast('Error', msg || type, 'error');
+
+            closeAuthModal() {
+                document.getElementById('authModal').classList.remove('open');
+            },
+
+            startAuth() {
+                this.closeAuthModal();
+                if (this.state.imsService) {
+                    this.openSelector();
+                } else {
+                    this.showToast('Error', 'IMS service not ready', 'error');
+                }
+            },
+
+            // ========== ASSET SELECTOR ==========
+            handleConnectClick() {
+                if (this.state.isAuthenticated) {
+                    this.openSelector();
+                } else {
+                    this.openAuthModal();
+                }
+            },
+
+            openSelector() {
+                if (!this.state.imsService) {
+                    this.showToast('Error', 'Authentication failed', 'error');
+                    return;
+                }
+
+                const dialog = document.getElementById('asset-selector-dialog');
+                const container = document.getElementById('asset-selector-container');
+
+                // Clear previous state
+                if (dialog.open) {
+                    dialog.close();
+                }
+                container.innerHTML = '';
+                this.state.selectorOpen = true;
+
+                const assetProps = {
+                    imsOrg: CONFIG.IMS_ORG,
+                    env: 'prod',
+                    selectMode: 'single',
+                    allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
+                    authService: this.state.imsService,
+
+                    onAssetSelect: (assets) => {
+                        if (assets && assets.length > 0) {
+                            this.updateUIWithAsset(assets[0]);
+                        }
+                        this.closeSelector();
+                    },
+
+                    onCancel: () => {
+                        this.closeSelector();
+                    }
+                };
+
+                try {
+                    PureJSSelectors.renderAssetSelectorWithAuthFlow(
+                        container,
+                        assetProps,
+                        () => {
+                            console.log('✓ Asset Selector Rendered');
+                            dialog.showModal();
+                        }
+                    );
+                } catch (e) {
+                    console.error('Failed to open selector:', e);
+                    this.showToast('Error', 'Failed to open Asset Selector', 'error');
+                    this.state.selectorOpen = false;
+                }
+            },
+
+            closeSelector() {
+                const dialog = document.getElementById('asset-selector-dialog');
+                const container = document.getElementById('asset-selector-container');
+
+                if (dialog.open) {
+                    container.innerHTML = '';
+                    dialog.close();
+                }
+                this.state.selectorOpen = false;
+            },
+
+            // ========== ASSET UI ==========
+            updateUIWithAsset(asset) {
+                const img = document.getElementById('assetPreviewImg');
+                const nameEl = document.getElementById('assetName');
+                const metaEl = document.getElementById('assetMeta');
+
+                // Get image source
+                let imageSrc = asset.path || '';
+                if (asset._links?.['http://ns.adobe.com/adobecloud/rel/rendition']?.[0]?.href) {
+                    imageSrc = asset._links['http://ns.adobe.com/adobecloud/rel/rendition'][0].href;
+                }
+
+                img.src = imageSrc;
+                nameEl.textContent = asset.name || 'Asset';
+                metaEl.textContent = asset.path ? `${asset.path}` : '';
+
+                document.getElementById('selectedAssetPreview').classList.add('active');
+                document.getElementById('adobeDamBox').classList.add('connected');
+
+                this.showToast('Success', `${asset.name || 'Asset'} selected`, 'success');
+            },
+
+            clearAsset() {
+                document.getElementById('selectedAssetPreview').classList.remove('active');
+                document.getElementById('adobeDamBox').classList.remove('connected');
+                document.getElementById('assetPreviewImg').src = '';
+            },
+
+            // ========== TOAST NOTIFICATIONS ==========
+            showToast(title, body, type = 'info') {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.innerHTML = `<strong>${title}</strong><span>${body}</span>`;
+
+                container.appendChild(toast);
+
+                // Auto remove after 4 seconds
+                setTimeout(() => {
+                    toast.remove();
+                }, 4000);
             }
         };
 
-        try {
-            PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
-        } catch (e) {
-            console.error("SDK Error", e);
-        }
-    }
-
-    function handleConnectClick() {
-        if (isAuthenticated) {
-            renderSelector();
-        } else {
-            document.getElementById('auth-modal').style.display = 'flex';
-        }
-    }
-
-    function triggerAdobeLogin() {
-        document.getElementById('auth-modal').style.display = 'none';
-        if (imsInstance) {
-            renderSelector();
-        } else {
-            showToast('Error', 'SDK not ready', 'error');
-        }
-    }
-
-function renderSelector() {
-    const dialog = document.getElementById('asset-selector-dialog');
-    const container = document.getElementById('asset-selector-container');
-    
-    // Clear state completely
-    container.innerHTML = '';
-    dialog.onclose = null;
-    dialog.oncancel = null;
-    
-    const assetProps = {
-        imsOrg: CONFIG.IMS_ORG,
-        //repositoryId: 'crx',
-        
-        
-    env: 'prod',
-    selectMode: 'single',
-    allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-    authService: imsInstance,
-    onAssetSelect: (assets) => {
-        if (assets && assets.length > 0) {
-            updateUI(assets[0]);
-        }
-        // ✅ CHANGE 2: Ensure this matches your function name
-        closeDialog(); 
-    },
-    onCancel: () => {
-        // ✅ CHANGE 3: Ensure this matches your function name
-        closeDialog(); 
-    }
-    };
-
-    PureJSSelectors.renderAssetSelectorWithAuthFlow(
-        container,
-        assetProps,
-        () => {
-            console.log('✓ Selector rendered');
-            dialog.showModal();
-        }
-    );
-}
-
-    function closeDialog() {
-    const dialog = document.getElementById('asset-selector-dialog');
-    const container = document.getElementById('asset-selector-container');
-    container.innerHTML = '';
-    dialog.close();
-}
-
-    function updateUI(asset) {
-        const img = document.getElementById('assetPreviewImg');
-        let src = asset.path;
-        if (asset._links?.['http://ns.adobe.com/adobecloud/rel/rendition']?.[0]) {
-            src = asset._links['http://ns.adobe.com/adobecloud/rel/rendition'][0].href;
-        }
-        img.src = src;
-        document.getElementById('assetName').textContent = asset.name || 'Asset';
-        document.getElementById('selectedAssetPreview').classList.add('active');
-        document.getElementById('adobeDamBox').classList.add('connected');
-        showToast('Success', asset.name + ' selected', 'success');
-    }
-
-    function clearAsset() {
-        document.getElementById('selectedAssetPreview').classList.remove('active');
-        document.getElementById('adobeDamBox').classList.remove('connected');
-    }
-
-    window.addEventListener('load', initApp);
-</script>
-
+        // Initialize app
+        app.init();
+    </script>
 </body>
 </html>
