@@ -300,7 +300,6 @@
         redirectUrl: GITHUB_PAGES_REDIRECT_URI,
         imsAuthorizationUrl: "https://ims-na1.adobelogin.com/ims/authorize/v2",  // ✅ CRITICAL FIX
         modalMode: true,
-        popUp: true,
         onAccessTokenReceived: (token) => {
             console.log("✓ IMS Token Received successfully.");
             if (token && typeof token === 'object') {
