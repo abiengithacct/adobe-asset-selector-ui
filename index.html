@@ -349,13 +349,14 @@
             }
 
             const assetProps = {
-                aemHost: CONFIG.AEM_HOST,
-                repositoryId: 'crx',
-                env: 'prod',
-                selectMode: 'single',
-                allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-                authService: imsInstance,
-                imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
+              aemHost: CONFIG.AEM_HOST,
+    repositoryId: 'crx',
+    assetRepositoryId: 'crx',
+    env: 'prod',
+    selectMode: 'single',
+    allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
+    authService: imsInstance,
+    imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
                 
                 onAssetSelect: (assets) => {
                     if (assets && assets.length > 0) {
