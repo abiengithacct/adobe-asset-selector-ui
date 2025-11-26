@@ -300,15 +300,20 @@
         .auth-cancel:hover { color: #6b7280; }
         
         /* DIALOG */
-        #asset-selector-dialog { 
-            border: none; 
-            border-radius: 16px; 
-            width: 90vw; 
-            height: 90vh; 
-            max-width: 1600px; 
-            padding: 0; 
-            box-shadow: 0 25px 80px rgba(0,0,0,0.2); 
-        }
+      #asset-selector-dialog { 
+    border: none; 
+    border-radius: 16px; 
+    width: 90vw; 
+    height: 90vh; 
+    max-width: 1600px; 
+    padding: 0; 
+    box-shadow: 0 25px 80px rgba(0,0,0,0.2);
+    margin: auto;  /* ← ADD THIS */
+    position: fixed;  /* ← ADD THIS */
+    top: 50%;  /* ← ADD THIS */
+    left: 50%;  /* ← ADD THIS */
+    transform: translate(-50%, -50%);  /* ← ADD THIS */
+}
         #asset-selector-dialog::backdrop { 
             background: rgba(0,0,0,0.6); 
         }
@@ -531,35 +536,39 @@
         }
     }
 
-    function renderSelector() {
-        const container = document.getElementById('asset-selector-container');
-        container.innerHTML = '';
+function renderSelector() {
+    const container = document.getElementById('asset-selector-container');
+    container.innerHTML = '';  // Clear previous state
+    
+    // Reset dialog scroll
+    const dialog = document.getElementById('asset-selector-dialog');
+    dialog.onclose = null;  // Clear any previous close handlers
 
-        const assetProps = {
-            imsOrg: CONFIG.IMS_ORG,
-            //repositoryId: 'crx',
-            env: 'prod',
-            selectMode: 'single',
-            allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-            authService: imsInstance,
+    const assetProps = {
+        imsOrg: CONFIG.IMS_ORG,
+        repositoryId: 'crx',
+        env: 'prod',
+        selectMode: 'single',
+        allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
+        authService: imsInstance,
 
-            onAssetSelect: (assets) => {
-                if (assets && assets.length > 0) {
-                    updateUI(assets[0]);
-                }
-                document.getElementById('asset-selector-dialog').close();
+        onAssetSelect: (assets) => {
+            if (assets && assets.length > 0) {
+                updateUI(assets[0]);
             }
-        };
+            dialog.close();
+        }
+    };
 
-        PureJSSelectors.renderAssetSelectorWithAuthFlow(
-            container,
-            assetProps,
-            () => {
-                console.log('✓ Selector rendered');
-                document.getElementById('asset-selector-dialog').showModal();
-            }
-        );
-    }
+    PureJSSelectors.renderAssetSelectorWithAuthFlow(
+        container,
+        assetProps,
+        () => {
+            console.log('✓ Selector rendered');
+            dialog.showModal();  // Opens centered
+        }
+    );
+}
 
     function updateUI(asset) {
         const img = document.getElementById('assetPreviewImg');
