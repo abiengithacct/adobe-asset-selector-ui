@@ -299,20 +299,20 @@
         }
         .auth-cancel:hover { color: #6b7280; }
         
-        /* DIALOG */
-      #asset-selector-dialog { 
-    border: none; 
-    border-radius: 16px; 
-    width: 90vw; 
-    height: 90vh; 
-    max-width: 1600px; 
-    padding: 0; 
-    box-shadow: 0 25px 80px rgba(0,0,0,0.2);
-    margin: auto;  /* ← ADD THIS */
-    position: fixed;  /* ← ADD THIS */
-    top: 50%;  /* ← ADD THIS */
-    left: 50%;  /* ← ADD THIS */
-    transform: translate(-50%, -50%);  /* ← ADD THIS */
+
+        #asset-selector-dialog {
+    background: white;
+    border-radius: 12px;
+    width: 85vw;           /* Reduced from 90vw */
+    height: 80vh;          /* Reduced from 90vh so it fits */
+    max-width: 1400px;
+    max-height: 900px;     /* Safety limit */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+    padding: 0;
+    border: none;
+    margin: auto;          /* Critical for native <dialog> centering */
 }
         #asset-selector-dialog::backdrop { 
             background: rgba(0,0,0,0.6); 
@@ -548,19 +548,23 @@ function renderSelector() {
     const assetProps = {
         imsOrg: CONFIG.IMS_ORG,
         //repositoryId: 'crx',
-        env: 'prod',
-        selectMode: 'single',
-        allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-        authService: imsInstance,
-        onAssetSelect: (assets) => {
-            if (assets && assets.length > 0) {
-                updateUI(assets[0]);
-            }
-            dialog.close();  // Properly close after selection
-        },
-        onCancel: () => {
-            dialog.close();  // Handle cancel
+        
+        
+    env: 'prod',
+    selectMode: 'single',
+    allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
+    authService: imsInstance,
+    onAssetSelect: (assets) => {
+        if (assets && assets.length > 0) {
+            updateUI(assets[0]);
         }
+        // ✅ CHANGE 2: Ensure this matches your function name
+        closeDialog(); 
+    },
+    onCancel: () => {
+        // ✅ CHANGE 3: Ensure this matches your function name
+        closeDialog(); 
+    }
     };
 
     PureJSSelectors.renderAssetSelectorWithAuthFlow(
