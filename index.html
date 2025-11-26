@@ -369,12 +369,6 @@
         );
     }
 
-    /**
-     * Initializes IMS service and handles authentication flow (token check or login start).
-     * @param {boolean} autoLaunch - Whether to automatically show the dialog after successful login.
-     */
-    // --- Core Asset Selector Logic (Final Robust Fix) ---
-
 /**
  * Initializes IMS service and handles authentication flow.
  * @param {boolean} autoLaunch - Whether to automatically show the dialog after successful login.
@@ -403,9 +397,7 @@ function initAssetSelector(autoLaunch = false) {
         onImsServiceInitialized: (service) => {
             imsInstance = service;
             
-            // 💡 FIX: We no longer try to call imsInstance.getAccessToken() or hasAccessToken().
-            // Instead, we check if we were redirected (codePresent) OR if the button initiated auto-launch.
-            // In either case, we proceed to setupAndRenderSelector, allowing the SDK to handle the token.
+            // Check if we were redirected (codePresent) OR if the user just clicked the button (autoLaunch)
             if (codePresent || autoLaunch) {
                 setupAndRenderSelector(autoLaunch);
             } else {
@@ -419,10 +411,6 @@ function initAssetSelector(autoLaunch = false) {
             showToast('Success', 'Authenticated with Adobe', 'success');
             // Clean up URL after token exchange
             window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI); 
-            // If the selector wasn't already set up (e.g., if we returned from a redirect), set it up now.
-            if (!imsInstance.getAssetSelector) { // Use a known SDK function check if needed
-                 setupAndRenderSelector(autoLaunch);
-            }
         },
         onErrorReceived: (type, msg) => {
             console.error('✗ IMS Error:', type, msg);
@@ -440,12 +428,12 @@ function initAssetSelector(autoLaunch = false) {
     }
 }
 
-    // Function bound to the button click (onclick="launchAssetSelector()")
+// Function bound to the button click (onclick="launchAssetSelector()")
 function launchAssetSelector() {
-    // We initiate the full initialization and login flow, set to auto-launch modal (true)
-    // The initAssetSelector function handles whether it needs to redirect for login or just render the modal.
+    // This starts the initialization process with autoLaunch=true, triggering the login pop-up.
     initAssetSelector(true); 
 }
+
 
     // --- UI Update Utilities ---
     function updateAssetUI(asset) {
