@@ -301,6 +301,7 @@
         redirectUrl: GITHUB_PAGES_REDIRECT_URI,  // Must match Console exactly
         modalMode: true,
         popUp: true,
+       imsAuthorizationUrl: "https://ims-na1.adobelogin.com/ims/authorize/v2",
         onAccessTokenReceived: (token) => {
             console.log("✓ IMS Token Received successfully. Token:", token);
             showToast("Success", "Authenticated with Adobe. Ready to select assets.", 'success');
@@ -313,6 +314,12 @@
 
     // --- 3. INITIALIZE IMS SERVICE ---
     function initializeImsService() {
+
+        console.log("📄 Initializing IMS Service with config:", {
+            clientId: IMS_CLIENT_ID,
+            redirectUrl: GITHUB_PAGES_REDIRECT_URI,
+            imsAuthorizationUrl: IMS_PROPS.imsAuthorizationUrl
+        });
         if (typeof PureJSSelectors !== 'undefined') {
             try {
                 imsInstance = PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
@@ -348,6 +355,7 @@
             selectMode: 'single',
             allowedAssetMimeTypes: ["image/png", "image/jpeg", "image/jpg"],
             authService: imsInstance,
+            imsAuthorizationUrl: "https://ims-na1.adobelogin.com/ims/authorize/v2",
             
             // Handlers for selection events
             onAssetSelect: (assets) => {
