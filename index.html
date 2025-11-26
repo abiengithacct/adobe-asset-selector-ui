@@ -270,15 +270,13 @@
         </div>
     </div>
 
-    <div id="asset-selector-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center;">
-        <div id="asset-selector-dialog" style="background:white; border-radius:12px; width:90vw; height:90vh; max-width:1600px; display:flex; flex-direction:column; box-shadow:0 25px 80px rgba(0,0,0,0.4);">
-            <div class="dialog-header">
-                <span class="dialog-title">📁 Adobe Experience Manager - Asset Selector</span>
-                <button class="dialog-close" onclick="closeAssetSelector()">×</button>
-            </div>
-            <div id="asset-selector-container" style="flex:1; overflow:hidden; background:white;"></div>
+    <dialog id="asset-selector-dialog">
+        <div class="dialog-header">
+            <span class="dialog-title">📁 Adobe Experience Manager - Asset Selector</span>
+            <button class="dialog-close" onclick="document.getElementById('asset-selector-dialog').close()">×</button>
         </div>
-    </div>
+        <div id="asset-selector-container"></div>
+    </dialog>
 
     <div class="toast-container" id="toastContainer"></div>
 
@@ -291,13 +289,9 @@
         SCOPE: 'AdobeID,openid,aem.folders,aem.assets.author'
     };
 
-    function closeAssetSelector() {
-        document.getElementById('asset-selector-modal').style.display = 'none';
-    }
-
-    function openAssetSelectorModal() {
-        document.getElementById('asset-selector-modal').style.display = 'flex';
-    }
+    let imsInstance = null;
+    
+    function showToast(title, body, type = 'info') {
         const toastContainer = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
@@ -357,6 +351,7 @@
             const assetProps = {
                 aemHost: CONFIG.AEM_HOST,
                 repositoryId: 'crx',
+                assetRepositoryId: 'crx',
                 env: 'prod',
                 selectMode: 'single',
                 allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
@@ -369,7 +364,7 @@
                         console.log('✓ Asset selected:', asset);
                         updateAssetUI(asset);
                     }
-                    closeAssetSelector();
+                    document.getElementById('asset-selector-dialog').close();
                     btn.disabled = false;
                     btn.textContent = 'Connect to DAM';
                 }
@@ -384,7 +379,7 @@
                 assetProps,
                 () => {
                     console.log('✓ Asset Selector rendered');
-                    openAssetSelectorModal();
+                    document.getElementById('asset-selector-dialog').showModal();
                     btn.disabled = false;
                     btn.textContent = 'Connect to DAM';
                 }
