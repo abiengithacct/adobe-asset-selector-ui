@@ -575,15 +575,24 @@
         </div>
     </div>
 
-    <div class="auth-modal" id="authModal">
-        <div class="auth-card">
-            <div class="auth-icon">A</div>
-            <h3 class="auth-title">Sign in with Adobe</h3>
-            <p class="auth-desc">Access your Adobe Experience Manager assets securely</p>
-            <button class="btn-adobe-auth" onclick="app.startAuth()">Sign in with Adobe</button>
+<div class="auth-modal" id="authModal">
+    <div class="auth-card">
+        <div class="auth-icon">A</div>
+        <h3 class="auth-title">Sign in with Adobe</h3>
+        <p class="auth-desc">Access your Adobe Experience Manager assets securely</p>
+        
+        <div id="authStep1">
+            <button class="btn-adobe-auth" onclick="app.generatePKCE()">Generate Access Code</button>
+            <div class="auth-cancel" onclick="app.closeAuthModal()">Cancel</div>
+        </div>
+        
+        <div id="authStep2" style="display:none;">
+            <p style="font-size:12px; color:#6b7280; margin-bottom:16px;">✓ Access code generated</p>
+            <a id="adobeAuthLink" class="btn-adobe-auth" style="text-decoration:none; display:block; text-align:center;">Sign in with Adobe</a>
             <div class="auth-cancel" onclick="app.closeAuthModal()">Cancel</div>
         </div>
     </div>
+</div>
 
     <dialog id="asset-selector-dialog">
         <button class="dialog-close-btn" onclick="app.closeSelector()">×</button>
@@ -615,45 +624,58 @@
                 window.addEventListener('load', () => this.setupIMS());
             },
 
-            setupIMS() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const hasCode = urlParams.get('code');
+  setupIMS() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasCode = urlParams.get('code');
+    const storedVerifier = sessionStorage.getItem('pkce_verifier');
+    const existingToken = sessionStorage.getItem('adobe_access_token');
+    const isAuthenticated = sessionStorage.getItem('adobe_authenticated') === 'true';
 
-                const imsProps = {
-                    imsClientId: CONFIG.CLIENT_ID,
-                    imsScope: CONFIG.SCOPE,
-                    redirectUrl: CONFIG.REDIRECT_URI,
-                    modalMode: true,
-                    imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
+    const imsProps = {
+        imsClientId: CONFIG.CLIENT_ID,
+        imsScope: CONFIG.SCOPE,
+        redirectUrl: CONFIG.REDIRECT_URI,
+        modalMode: false,
+        imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
+        useNativeAuthFlow: false,
 
-                    onImsServiceInitialized: (service) => {
-                        console.log('✓ IMS Service Initialized');
-                        this.state.imsService = service;
-                        if (hasCode) {
-                            this.state.isAuthenticated = true;
-                            window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI);
-                        }
-                    },
+        onImsServiceInitialized: (service) => {
+            console.log('✓ IMS Service Initialized');
+            this.state.imsService = service;
+            
+            // If already authenticated from previous session, auto-open selector
+            if (isAuthenticated && existingToken) {
+                console.log('✓ Resuming authenticated session');
+                this.state.isAuthenticated = true;
+                this.openSelector();
+            }
+            // If returning from OAuth callback
+            else if (hasCode && storedVerifier) {
+                this.exchangeCodeForToken(hasCode, storedVerifier);
+            }
+        },
 
-                    onAccessTokenReceived: (token) => {
-                        console.log('✓ Access Token Received');
-                        this.state.isAuthenticated = true;
-                    },
+        onAccessTokenReceived: (token) => {
+            console.log('✓ Access Token Received');
+            this.state.isAuthenticated = true;
+            sessionStorage.setItem('adobe_authenticated', 'true');
+            sessionStorage.setItem('adobe_access_token', token);
+            sessionStorage.removeItem('pkce_verifier');
+            this.openSelector();
+        },
 
-                    onErrorReceived: (type, msg) => {
-                        console.error('IMS Error:', type, msg);
-                        this.showToast('Error', msg || type, 'error');
-                    }
-                };
+        onErrorReceived: (type, msg) => {
+            console.error('IMS Error:', type, msg);
+            this.showToast('Error', msg || type, 'error');
+        }
+    };
 
-                try {
-                    PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
-                } catch (e) {
-                    console.error('Failed to register IMS:', e);
-                    this.showToast('Error', 'Failed to initialize Adobe SDK', 'error');
-                }
-            },
-
+    try {
+        PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
+    } catch (e) {
+        console.error('Failed to register IMS:', e);
+    }
+}
             // ========== AUTH MODAL ==========
             openAuthModal() {
                 document.getElementById('authModal').classList.add('open');
@@ -673,13 +695,13 @@
             },
 
             // ========== ASSET SELECTOR ==========
+
             handleConnectClick() {
-                if (this.state.isAuthenticated) {
-                    this.openSelector();
-                } else {
-                    this.openAuthModal();
-                }
-            },
+    // Always show modal to generate PKCE
+    document.getElementById('authStep1').style.display = 'block';
+    document.getElementById('authStep2').style.display = 'none';
+    this.openAuthModal();
+}
 
             openSelector() {
                 if (!this.state.imsService) {
@@ -742,6 +764,87 @@
                 }
                 this.state.selectorOpen = false;
             },
+
+            // ========== PKCE GENERATION ==========
+async generatePKCE() {
+    try {
+        // 1. Generate Code Verifier (random 128 chars)
+        const array = new Uint32Array(32);
+        window.crypto.getRandomValues(array);
+        const verifier = Array.from(array, dec => ('0' + dec.toString(16)).substr(-2))
+            .join('')
+            .substring(0, 128);
+
+        // 2. Generate Code Challenge (SHA-256 hash)
+        const encoder = new TextEncoder();
+        const data = encoder.encode(verifier);
+        const hash = await window.crypto.subtle.digest('SHA-256', data);
+        
+        // 3. Base64URL encode
+        const challenge = btoa(String.fromCharCode.apply(null, new Uint8Array(hash)))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+
+        // 4. Store verifier for later token exchange
+        sessionStorage.setItem('pkce_verifier', verifier);
+
+        // 5. Build auth URL
+        const authUrl = new URL(CONFIG.IMS_AUTH_URL);
+        authUrl.searchParams.set('client_id', CONFIG.CLIENT_ID);
+        authUrl.searchParams.set('redirect_uri', CONFIG.REDIRECT_URI);
+        authUrl.searchParams.set('scope', CONFIG.SCOPE);
+        authUrl.searchParams.set('code_challenge', challenge);
+        authUrl.searchParams.set('code_challenge_method', 'S256');
+        authUrl.searchParams.set('response_type', 'code');
+        authUrl.searchParams.set('state', 'security_token=' + Math.random());
+
+        // 6. Show button and set href
+        document.getElementById('authStep1').style.display = 'none';
+        document.getElementById('authStep2').style.display = 'block';
+        document.getElementById('adobeAuthLink').href = authUrl.toString();
+
+        this.showToast('Success', 'Access code ready. Click "Sign in with Adobe"', 'success');
+    } catch (error) {
+        console.error('PKCE generation failed:', error);
+        this.showToast('Error', 'Failed to generate access code', 'error');
+    }
+},
+
+async exchangeCodeForToken(code, verifier) {
+    try {
+        const response = await fetch('https://ims-na1.adobelogin.com/ims/token/v3', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                grant_type: 'authorization_code',
+                client_id: CONFIG.CLIENT_ID,
+                code: code,
+                code_verifier: verifier
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✓ Token exchanged successfully');
+            
+            // Save token to sessionStorage
+            sessionStorage.setItem('adobe_access_token', data.access_token);
+            sessionStorage.setItem('adobe_authenticated', 'true');
+            
+            this.state.isAuthenticated = true;
+            window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI);
+            this.openSelector();
+        } else {
+            throw new Error('Token exchange failed');
+        }
+    } catch (error) {
+        console.error('Token exchange error:', error);
+        this.showToast('Error', 'Authentication failed', 'error');
+    }
+}
 
             // ========== ASSET UI ==========
             updateUIWithAsset(asset) {
