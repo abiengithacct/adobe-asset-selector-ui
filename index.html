@@ -631,53 +631,47 @@ setupIMS() {
     const existingToken = sessionStorage.getItem('adobe_access_token');
     const isAuthenticated = sessionStorage.getItem('adobe_authenticated') === 'true';
 
-    const imsProps = {
-        imsClientId: CONFIG.CLIENT_ID,
-        imsScope: CONFIG.SCOPE,
-        redirectUrl: CONFIG.REDIRECT_URI,
-        modalMode: false,
-        imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
+  const imsProps = {
+    imsClientId: CONFIG.CLIENT_ID,
+    imsScope: CONFIG.SCOPE,
+    redirectUrl: CONFIG.REDIRECT_URI,
+    modalMode: false,
+    imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
 
-        onImsServiceInitialized: (service) => {
-            console.log('✓ IMS Service Initialized');
-            this.state.imsService = service;
-            
-            // Only auto-open selector if already authenticated from PREVIOUS session
-            if (isAuthenticated && existingToken && !hasCode) {
-                console.log('✓ Resuming authenticated session');
-                this.state.isAuthenticated = true;
-                this.openSelector();
-            }
-            // If returning from OAuth callback, DO NOT call exchangeCodeForToken
-            // The SDK will handle it automatically via onAccessTokenReceived
-        },
-
-      
+    onImsServiceInitialized: (service) => {
+        console.log('✓ IMS Service Initialized');
+        this.state.imsService = service;
+        
+        if (isAuthenticated && existingToken && !hasCode) {
+            console.log('✓ Resuming authenticated session');
+            this.state.isAuthenticated = true;
+            this.openSelector();
+        }
+    },
 
     onAccessTokenReceived: (token) => {
-    console.log('✓ Access Token Received:', token);
-    this.state.isAuthenticated = true;
-    sessionStorage.setItem('adobe_authenticated', 'true');
-    sessionStorage.setItem('adobe_access_token', token);
-    sessionStorage.removeItem('pkce_verifier');
-    window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI);  // ✅ Remove code from URL
-    setTimeout(() => this.openSelector(), 500);  // ✅ Add delay for token to settle
-},
+        console.log('✓ Access Token Received:', token);
+        this.state.isAuthenticated = true;
+        sessionStorage.setItem('adobe_authenticated', 'true');
+        sessionStorage.setItem('adobe_access_token', token);
+        sessionStorage.removeItem('pkce_verifier');
+        window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI);
+        setTimeout(() => this.openSelector(), 500);
+    },
 
     onErrorReceived: (type, msg) => {
-    console.error('IMS Error:', type, msg);
-    this.showToast('Error', msg || type, 'error');
-    // ✅ Reset modal back to step 1
-    document.getElementById('authStep1').style.display = 'block';
-    document.getElementById('authStep2').style.display = 'none';
-};
+        console.error('IMS Error:', type, msg);
+        this.showToast('Error', msg || type, 'error');
+        document.getElementById('authStep1').style.display = 'block';
+        document.getElementById('authStep2').style.display = 'none';
+    }  // ← NO semicolon here
+};  // ← Semicolon closes imsProps object
 
-    try {
-        PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
-    } catch (e) {
-        console.error('Failed to register IMS:', e);
-    }
-},
+try {
+    PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
+} catch (e) {
+    console.error('Failed to register IMS:', e);
+}
             // ========== AUTH MODAL ==========
             openAuthModal() {
                 document.getElementById('authModal').classList.add('open');
