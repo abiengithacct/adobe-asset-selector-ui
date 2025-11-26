@@ -283,38 +283,43 @@
 <script>
     const CONFIG = {
         CLIENT_ID: '466f31740dc24133a32506acb2823d3f',
-        REDIRECT_URI: 'https://abiengithacct.github.io/adobe-asset-selector-ui',
+        REDIRECT_URI: 'https://abiengithacct.github.io/adobe-asset-selector-ui', // This MUST match your registered redirect URI
         AEM_HOST: 'https://author-p173552-e1855304.adobeaemcloud.com',
         IMS_AUTH_URL: 'https://ims-na1.adobelogin.com/ims/authorize/v2',
         SCOPE: 'AdobeID,openid,aem.folders,aem.assets.author'
     };
 
     let imsInstance = null;
-    
+    const connectDamBtn = document.getElementById('connectDamBtn');
+    const assetSelectorDialog = document.getElementById('asset-selector-dialog');
+
     function showToast(title, body, type = 'info') {
         const toastContainer = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.innerHTML = `<strong>${title}</strong><span>${body}</span>`;
         toastContainer.appendChild(toast);
-        
+
         setTimeout(() => {
             toast.remove();
         }, 4000);
     }
 
-    function launchAssetSelector() {
-        console.log('🚀 Launching Asset Selector');
-        
+    /**
+     * Initializes IMS, attempts to login/exchange token, and renders the selector on success.
+     * @param {boolean} autoLaunch - Whether to automatically show the dialog after authentication.
+     */
+    function initAssetSelector(autoLaunch = true) {
+        console.log('🚀 Initializing Asset Selector flow...');
+
         if (!window.PureJSSelectors) {
-            showToast('Error', 'SDK not loaded', 'error');
-            setTimeout(launchAssetSelector, 500);
+            showToast('Error', 'SDK not loaded. Retrying...', 'error');
+            setTimeout(() => initAssetSelector(autoLaunch), 500);
             return;
         }
 
-        const btn = document.getElementById('connectDamBtn');
-        btn.disabled = true;
-        btn.textContent = 'Loading...';
+        connectDamBtn.disabled = true;
+        connectDamBtn.textContent = 'Authenticating...';
 
         const imsProps = {
             imsClientId: CONFIG.CLIENT_ID,
@@ -323,76 +328,107 @@
             redirectUrl: CONFIG.REDIRECT_URI,
             imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
             modalMode: true,
-            
+
             onImsServiceInitialized: (service) => {
                 console.log('✓ IMS Service initialized');
                 imsInstance = service;
+                // Once initialized, attempt to see if we have a token or need to start the flow
+                if (imsInstance.hasAccessToken()) {
+                    console.log('✓ Access Token already available.');
+                    setupAndRenderSelector(autoLaunch);
+                } else if (new URLSearchParams(window.location.search).get('code')) {
+                    // This handles the redirect callback immediately
+                    console.log('⏳ Authorization code detected. Exchanging for token...');
+                    // The SDK is responsible for automatically handling the code exchange upon initialization
+                    // if it finds the 'code' parameter in the URL.
+                    setupAndRenderSelector(autoLaunch);
+                } else {
+                    // No token or code, need to start the login flow on button click
+                    connectDamBtn.disabled = false;
+                    connectDamBtn.textContent = 'Connect to DAM';
+                    showToast('Info', 'Ready to connect to Adobe DAM.', 'info');
+                }
             },
             onAccessTokenReceived: (token) => {
-                console.log('✓ Access Token received');
+                console.log('✓ Access Token received/exchanged.');
+                // Remove the code/state from the URL to clean up the browser history
+                window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI); 
                 showToast('Success', 'Authenticated with Adobe', 'success');
             },
             onErrorReceived: (type, msg) => {
                 console.error('✗ Error:', type, msg);
-                showToast('Error', msg || type, 'error');
-                btn.disabled = false;
-                btn.textContent = 'Connect to DAM';
+                showToast('Error', msg || 'Authentication failed. Check console.', 'error');
+                connectDamBtn.disabled = false;
+                connectDamBtn.textContent = 'Connect to DAM';
             }
         };
 
         try {
-            console.log('📝 Registering IMS service...');
-            imsInstance = window.PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
-            
-            if (!imsInstance) {
-                throw new Error('IMS registration failed');
-            }
-
-            const assetProps = {
-                aemHost: CONFIG.AEM_HOST,
-                repositoryId: 'crx',
-                assetRepositoryId: 'crx',
-                env: 'prod',
-                selectMode: 'single',
-                allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-                authService: imsInstance,
-                imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
-                
-                onAssetSelect: (assets) => {
-                    if (assets && assets.length > 0) {
-                        const asset = assets[0];
-                        console.log('✓ Asset selected:', asset);
-                        updateAssetUI(asset);
-                    }
-                    document.getElementById('asset-selector-dialog').close();
-                    btn.disabled = false;
-                    btn.textContent = 'Connect to DAM';
-                }
-            };
-
-            console.log('📂 Rendering Asset Selector...');
-            const container = document.getElementById('asset-selector-container');
-            container.innerHTML = '';
-            
-            window.PureJSSelectors.renderAssetSelectorWithAuthFlow(
-                container,
-                assetProps,
-                () => {
-                    console.log('✓ Asset Selector rendered');
-                    document.getElementById('asset-selector-dialog').showModal();
-                    btn.disabled = false;
-                    btn.textContent = 'Connect to DAM';
-                }
-            );
-
+            window.PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
         } catch (error) {
-            console.error('✗ Error:', error);
-            showToast('Error', error.message, 'error');
-            btn.disabled = false;
-            btn.textContent = 'Connect to DAM';
+            console.error('IMS registration error:', error);
+            showToast('Error', 'IMS registration failed: ' + error.message, 'error');
         }
     }
 
+    function setupAndRenderSelector(launchModal = false) {
+        if (!imsInstance) {
+            console.error('IMS instance not available.');
+            return;
+        }
+        
+        const assetProps = {
+            aemHost: CONFIG.AEM_HOST,
+            repositoryId: 'crx',
+            assetRepositoryId: 'crx',
+            env: 'prod',
+            selectMode: 'single',
+            allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
+            authService: imsInstance,
+            imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
+
+            onAssetSelect: (assets) => {
+                if (assets && assets.length > 0) {
+                    const asset = assets[0];
+                    console.log('✓ Asset selected:', asset);
+                    updateAssetUI(asset);
+                }
+                assetSelectorDialog.close();
+                connectDamBtn.disabled = false;
+                connectDamBtn.textContent = 'Connect to DAM';
+            }
+        };
+
+        console.log('📂 Rendering Asset Selector...');
+        const container = document.getElementById('asset-selector-container');
+        container.innerHTML = '';
+
+        window.PureJSSelectors.renderAssetSelectorWithAuthFlow(
+            container,
+            assetProps,
+            () => {
+                console.log('✓ Asset Selector rendered');
+                connectDamBtn.disabled = false;
+                connectDamBtn.textContent = 'Select Image from DAM';
+                if (launchModal) {
+                    // Launch modal only if requested (e.g., on first click or successful redirect)
+                    assetSelectorDialog.showModal();
+                }
+            }
+        );
+    }
+
+    function launchAssetSelector() {
+        // If we have an instance and a token, just show the modal
+        if (imsInstance && imsInstance.hasAccessToken()) {
+            assetSelectorDialog.showModal();
+        } else {
+            // Otherwise, kick off the full initialization and login flow
+            initAssetSelector(true); // 'true' means auto-launch modal after successful login
+        }
+    }
+    
+    // UI Utility functions remain the same
     function updateAssetUI(asset) {
         const selectedAssetPreview = document.getElementById('selectedAssetPreview');
         const assetPreviewImg = document.getElementById('assetPreviewImg');
@@ -435,15 +471,9 @@
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 
+    // Call the initialization function on page load
     window.addEventListener('load', () => {
-        console.log('📄 Page loaded');
-        console.log('   Current URL:', window.location.href);
-        console.log('   SDK loaded:', typeof window.PureJSSelectors !== 'undefined');
-        
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('code')) {
-            console.log('✓ OAuth callback detected with code');
-        }
+        initAssetSelector(false); // Do not auto-launch the modal on initial page load
     });
 </script>
 
