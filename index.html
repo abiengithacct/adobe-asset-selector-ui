@@ -706,26 +706,28 @@
                 container.innerHTML = '';
                 this.state.selectorOpen = true;
 
-                const assetProps = {
-                    imsOrg: CONFIG.IMS_ORG,
-                    // ✅ CRITICAL FIX: Hardcoded Repo ID
-                    repositoryId: 'author-p173552-e1855304.adobeaemcloud.com',
-                    env: 'prod',
-                    selectMode: 'single',
-                    allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-                    authService: this.state.imsService,
+        const assetProps = {
+    imsOrg: CONFIG.IMS_ORG,
+    repositoryId: 'MoEngageExchangePartnerProgram-p173552-uk50163',  // ✅ FIXED
+    env: 'prod',
+    selectMode: 'single',
+    allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],  // ✅ EXPANDED
+    authService: this.state.imsService,
+    aemHost: CONFIG.AEM_HOST,  // ✅ ADDED
 
-                    onAssetSelect: (assets) => {
-                        if (assets && assets.length > 0) {
-                            this.updateUIWithAsset(assets[0]);
-                        }
-                        this.closeSelector();
-                    },
+    onAssetSelect: (assets) => {
+        console.log('✓ Asset Selected:', assets);  // ✅ Better logging
+        if (assets && assets.length > 0) {
+            this.updateUIWithAsset(assets[0]);
+        }
+        this.closeSelector();
+    },
 
-                    onCancel: () => {
-                        this.closeSelector();
-                    }
-                };
+    onCancel: () => {
+        console.log('✓ Selection Cancelled');
+        this.closeSelector();
+    }
+};
 
                 console.log('📤 Opening Selector with:', assetProps);
 
