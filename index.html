@@ -221,48 +221,51 @@
      * Sets up the Asset Selector and renders it into the container.
      * @param {boolean} launchModal - Whether to automatically show the modal after rendering.
      */
-    function setupAndRenderSelector(launchModal = false) {
-        if (!imsInstance) {
-            console.error('IMS instance not available. Cannot render selector.');
-            return;
-        }
-        
-        const assetProps = {
-            aemHost: CONFIG.AEM_HOST,
-            repositoryId: 'crx',
-            assetRepositoryId: 'crx',
-            env: 'prod',
-            selectMode: 'single',
-            allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-            authService: imsInstance,
-            imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
-
-            onAssetSelect: (assets) => {
-                if (assets && assets.length > 0) {
-                    const asset = assets[0];
-                    updateAssetUI(asset);
-                }
-                closeAssetSelector();
-                connectDamBtn.disabled = false;
-                connectDamBtn.textContent = 'Select Image from DAM';
-            }
-        };
-
-        const container = document.getElementById('asset-selector-container');
-        container.innerHTML = '';
-        
-        window.PureJSSelectors.renderAssetSelectorWithAuthFlow(
-            container,
-            assetProps,
-            () => {
-                connectDamBtn.disabled = false;
-                connectDamBtn.textContent = 'Select Image from DAM';
-                if (launchModal) {
-                    openAssetSelectorModal();
-                }
-            }
-        );
+function setupAndRenderSelector(launchModal = false) {
+    if (!imsInstance) {
+        console.error('IMS instance not available');
+        return;
     }
+    
+    const assetProps = {
+        aemHost: CONFIG.AEM_HOST,
+        repositoryId: 'crx',
+        assetRepositoryId: 'crx',
+        env: 'prod',
+        selectMode: 'single',
+        allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
+        authService: imsInstance,
+        imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
+
+        onAssetSelect: (assets) => {
+            if (assets && assets.length > 0) {
+                updateAssetUI(assets[0]);
+            }
+            closeAssetSelector();
+            connectDamBtn.disabled = false;
+            connectDamBtn.textContent = 'Connect to DAM';
+        }
+    };
+
+    const container = document.getElementById('asset-selector-container');
+    container.innerHTML = '';
+    
+    window.PureJSSelectors.renderAssetSelectorWithAuthFlow(
+        container,
+        assetProps,
+        () => {
+            console.log('✓ Render complete, opening modal:', launchModal);
+            connectDamBtn.disabled = false;
+            connectDamBtn.textContent = 'Connect to DAM';
+            
+            if (launchModal) {
+                setTimeout(() => {
+                    openAssetSelectorModal();
+                }, 100);
+            }
+        }
+    );
+}
 
     /**
      * Initializes IMS service and handles authentication flow.
@@ -289,20 +292,18 @@
             imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
             modalMode: true, // Use pop-up for login
 
-            onImsServiceInitialized: (service) => {
-                imsInstance = service;
-                
-                const shouldLaunch = codePresent || autoLaunch;
-
-                if (shouldLaunch) {
-                    // Pass TRUE here to force the modal open, either after redirect or button click
-                    setupAndRenderSelector(true); 
-                } else {
-                    // Initial page load, no redirect, button is ready
-                    connectDamBtn.disabled = false;
-                    connectDamBtn.textContent = 'Connect to DAM';
-                }
-            },
+      onImsServiceInitialized: (service) => {
+    imsInstance = service;
+    console.log('✓ IMS initialized, autoLaunch:', autoLaunch);
+    
+    if (codePresent || autoLaunch) {
+        console.log('🚀 Rendering selector...');
+        setupAndRenderSelector(true);
+    } else {
+        connectDamBtn.disabled = false;
+        connectDamBtn.textContent = 'Connect to DAM';
+    }
+},
             onAccessTokenReceived: (token) => {
                 showToast('Success', 'Authenticated with Adobe', 'success');
                 // Clean up URL after token exchange
