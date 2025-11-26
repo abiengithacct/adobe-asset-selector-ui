@@ -391,18 +391,19 @@
             imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
             modalMode: true, // Use pop-up for login
 
-            onImsServiceInitialized: (service) => {
-                imsInstance = service;
-               
-                // Check if a code is present (redirect) OR if an access token can be retrieved.
-                if (new URLSearchParams(window.location.search).get('code') || imsInstance.getAccessToken()) {
-                    setupAndRenderSelector(autoLaunch);
-                } else {
-                    // Ready to connect, awaiting user click
-                    connectDamBtn.disabled = false;
-                    connectDamBtn.textContent = 'Connect to DAM';
-                }
-            },
+          
+            onImsServiceInitialized: (service) => {
+    imsInstance = service;
+   
+    // Check if redirected back with OAuth code
+    if (new URLSearchParams(window.location.search).get('code')) {
+        setupAndRenderSelector(autoLaunch);
+    } else {
+        // Ready to connect, awaiting user click
+        connectDamBtn.disabled = false;
+        connectDamBtn.textContent = 'Connect to DAM';
+    }
+},
             
             // ... (rest of imsProps remains the same)
             onAccessTokenReceived: (token) => {
