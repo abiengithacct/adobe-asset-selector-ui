@@ -1,3 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoEngage - Create Push Campaign</title>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacMacFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f5f7fa; color: #1a1a1a; }
+        
+        /* HEADER */
+        .moe-header { background: #2c3e50; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .moe-logo { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+        
+        /* LAYOUT */
+        .main-layout { display: flex; min-height: calc(100vh - 50px); }
+        
+        /* SIDEBAR */
+        .sidebar { width: 280px; background: #34495e; color: white; padding: 0; flex-shrink: 0; }
+        .create-new-btn { 
+            background: #3498db; color: white; border: none; padding: 16px 24px; 
+            font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; 
+            text-align: left; display: flex; align-items: center; gap: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .create-new-btn:hover { background: #2980b9; }
+        
+        .sidebar-item { 
+            padding: 14px 24px; color: rgba(255,255,255,0.8); cursor: pointer; 
+            display: flex; align-items: center; gap: 12px; font-size: 15px;
+            border-left: 3px solid transparent; transition: all 0.2s;
+        }
+        .sidebar-item:hover { background: rgba(255,255,255,0.05); color: white; }
+        .sidebar-item.active { background: rgba(52, 152, 219, 0.2); color: white; border-left-color: #3498db; }
+        .sidebar-item .icon { width: 20px; }
+        
+        /* MAIN CONTENT */
+        .main-content { flex: 1; padding: 32px 40px; background: #f5f7fa; overflow-y: auto; }
+        
+        .page-header { margin-bottom: 24px; }
+        .page-title { font-size: 24px; font-weight: 600; color: #2c3e50; margin-bottom: 8px; }
+        .breadcrumb { font-size: 13px; color: #7f8c8d; }
+        
+        /* CONTENT CARD */
+        .content-card { background: white; border-radius: 8px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        
+        .section-title { font-size: 16px; font-weight: 600; color: #2c3e50; margin-bottom: 20px; }
+        
+        /* RICH MEDIA SECTION */
+        .rich-media-section { margin-bottom: 32px; }
+        .gif-option { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+        .gif-option input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .new-badge { 
+            background: #3498db; color: white; padding: 3px 10px; 
+            border-radius: 4px; font-size: 11px; font-weight: 600; 
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        
+        /* IMAGE SECTION */
+        .image-section { }
+        .image-options { display: flex; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
+        .radio-option { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .radio-option input[type="radio"] { width: 18px; height: 18px; cursor: pointer; }
+        .radio-option label { cursor: pointer; font-size: 14px; color: #2c3e50; }
+        .version-badge { 
+            background: #e3f2fd; color: #1976d2; padding: 2px 8px; 
+            border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 4px;
+        }
+        
+        /* ADOBE DAM BOX */
+        .adobe-dam-box { 
+            border: 2px dashed #cbd5e0; background: #f8fafc; 
+            border-radius: 8px; padding: 40px; text-align: center; margin-bottom: 16px;
+            transition: all 0.3s;
+        }
+        .adobe-dam-box.connected { 
+            border-color: #27ae60; background: #f0fff4;
+        }
+        .adobe-dam-title { font-size: 15px; font-weight: 500; color: #2c3e50; margin-bottom: 16px; }
+        .connect-dam-btn { 
+            background: white; color: #3498db; border: 1px solid #3498db; 
+            padding: 10px 24px; border-radius: 6px; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; display: inline-block;
+        }
+        .connect-dam-btn:hover { background: #3498db; color: white; }
+        .connect-dam-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .image-specs { font-size: 12px; color: #7f8c8d; line-height: 1.6; }
+        
+        /* SELECTED ASSET PREVIEW */
+        .selected-asset-preview { 
+            border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; 
+            margin-top: 20px; display: none; animation: slideIn 0.3s;
+        }
+        .selected-asset-preview.active { display: block; }
+        .asset-preview-img { width: 100%; max-height: 300px; object-fit: cover; display: block; background: #f8fafc; }
+        .asset-preview-info { 
+            padding: 12px; background: #f8fafc; border-top: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .asset-name { font-size: 13px; font-weight: 500; color: #2c3e50; }
+        .asset-meta { font-size: 11px; color: #7f8c8d; margin-top: 4px; }
+        .btn-remove { 
+            background: #e74c3c; color: white; border: none; padding: 6px 12px; 
+            border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-remove:hover { background: #c0392b; }
+
+        /* ADOBE SELECTOR MODAL (Using DIV for maximum compatibility) */
+        #asset-selector-modal {
+            display:none; 
+            position:fixed; 
+            top:0; 
+            left:0; 
+            width:100%; 
+            height:100%; 
+            background:rgba(0,0,0,0.8); 
+            z-index:10000; 
+            align-items:center; 
+            justify-content:center;
+        }
+        #asset-selector-dialog {
+            background:white; 
+            border-radius:12px; 
+            width:90vw; 
+            height:90vh; 
+            max-width:1600px; 
+            display:flex; 
+            flex-direction:column; 
+            box-shadow:0 25px 80px rgba(0,0,0,0.4);
+        }
+        
+        #asset-selector-container { 
+            flex:1; 
+            overflow:hidden; 
+            background:white;
+        }
+        
+        .dialog-header { 
+            height: 64px; background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white; display: flex; justify-content: space-between; 
+            align-items: center; padding: 0 24px; border-radius: 12px 12px 0 0;
+        }
+        .dialog-title { font-size: 18px; font-weight: 600; }
+        .dialog-close { 
+            background: rgba(255,255,255,0.1); border: none; color: white; 
+            font-size: 28px; cursor: pointer; width: 40px; height: 40px; 
+            border-radius: 8px; transition: all 0.2s;
+        }
+        .dialog-close:hover { background: rgba(255,255,255,0.2); }
+        
+        /* TOAST */
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 11000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { 
+            min-width: 320px; background: white; padding: 16px 20px; border-left: 4px solid #3498db; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 6px; animation: slideInRight 0.3s;
+        }
+        .toast.success { border-left-color: #27ae60; }
+        .toast.error { border-left-color: #e74c3c; }
+        .toast.info { border-left-color: #3498db; }
+        .toast strong { display: block; margin-bottom: 4px; font-size: 14px; }
+        .toast span { font-size: 13px; color: #7f8c8d; }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+        
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .main-layout { flex-direction: column; }
+            .sidebar { width: 100%; }
+            .image-options { flex-direction: column; }
+        }
+    </style>
+    
+<script src="https://experience.adobe.com/solutions/CQ-assets-selectors/static-assets/resources/assets-selectors.js"></script>
+</head>
+<body>
+
+    <div class="moe-header">
+        <div class="moe-logo">MoEngage</div>
+    </div>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <button class="create-new-btn">
+                <span style="font-size:18px;">+</span> Create New
+            </button>
+            
+            <div class="sidebar-item">
+                <span class="icon">📊</span> Dashboards
+            </div>
+            <div class="sidebar-item">
+                <span class="icon">📈</span> Analyze
+            </div>
+            <div class="sidebar-item">
+                <span class="icon">👥</span> Segment
+            </div>
+            <div class="sidebar-item active">
+                <span class="icon">📢</span> Engage
+            </div>
+            <div class="sidebar-item">
+                <span class="icon">📬</span> Inform
+            </div>
+            <div class="sidebar-item">
+                <span class="icon">🎨</span> Personalize
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="page-header">
+                <div class="breadcrumb">Engage › Push Notifications › Create Campaign</div>
+                <h1 class="page-title">Create Push Notification</h1>
+            </div>
+
+            <div class="content-card">
+                <div class="rich-media-section">
+                    <h2 class="section-title">Rich media</h2>
+                    <div class="gif-option">
+                        <input type="checkbox" id="useGif">
+                        <label for="useGif" style="font-size:14px; color:#2c3e50;">Use GIF for Android 14+</label>
+                        <span class="new-badge">New</span>
+                    </div>
+                </div>
+
+                <div class="image-section">
+                    <h2 class="section-title">Image</h2>
+                    
+                    <div class="image-options">
+                        <div class="radio-option">
+                            <input type="radio" name="imageSource" id="imageUrl">
+                            <label for="imageUrl">Image URL</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="imageSource" id="uploadImage">
+                            <label for="uploadImage">Upload image</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="imageSource" id="merlinAI">
+                            <label for="merlinAI">Merlin AI Designer</label>
+                            <span class="version-badge">v2.0</span>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="imageSource" id="uploadCMS" checked>
+                            <label for="uploadCMS">Upload from CMS</label>
+                        </div>
+                    </div>
+
+                    <div class="adobe-dam-box" id="adobeDamBox">
+                        <div class="adobe-dam-title" id="damTitle">Select an image from Adobe DAM</div>
+                        <button class="connect-dam-btn" id="connectDamBtn" onclick="launchAssetSelector()">Connect to DAM</button>
+                    </div>
+
+                    <div class="selected-asset-preview" id="selectedAssetPreview">
+                        <img id="assetPreviewImg" class="asset-preview-img" src="" alt="Selected Asset">
+                        <div class="asset-preview-info">
+                            <div>
+                                <div class="asset-name" id="assetName">Asset Name</div>
+                                <div class="asset-meta" id="assetMeta"></div>
+                            </div>
+                            <button class="btn-remove" onclick="clearAsset()">Remove</button>
+                        </div>
+                    </div>
+
+                    <div class="image-specs">
+                        Use image size of around 25 KB. Recommended aspect ratio (width:height) 2.9:1 with buttons, 2.8:1 without buttons.<br>
+                        Supported File types: png, jpeg, jpg
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="asset-selector-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center;">
+        <div id="asset-selector-dialog">
+            <div class="dialog-header">
+                <span class="dialog-title">📁 Adobe Experience Manager - Asset Selector</span>
+                <button class="dialog-close" onclick="closeAssetSelector()">×</button>
+            </div>
+            <div id="asset-selector-container"></div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
 <script>
     const CONFIG = {
         CLIENT_ID: '466f31740dc24133a32506acb2823d3f',
@@ -11,7 +297,7 @@
     const connectDamBtn = document.getElementById('connectDamBtn');
     const assetSelectorModal = document.getElementById('asset-selector-modal');
 
-    // --- Modal Control Functions (Adjusted for your new div structure) ---
+    // --- Modal Control Functions ---
     function closeAssetSelector() {
         assetSelectorModal.style.display = 'none';
     }
@@ -20,7 +306,7 @@
         assetSelectorModal.style.display = 'flex';
     }
     
-    // --- Toast Function (Corrected and self-contained) ---
+    // --- Toast Function ---
     function showToast(title, body, type = 'info') {
         const toastContainer = document.getElementById('toastContainer');
         const toast = document.createElement('div');
@@ -145,14 +431,12 @@
             openAssetSelectorModal();
         } else {
             // Otherwise, kick off the full initialization and login flow, set to auto-launch modal
-            // Note: If initAssetSelector was already called on load, this will just call setupAndRenderSelector(true) 
             initAssetSelector(true); 
         }
     }
 
     // --- UI Update Utilities ---
     function updateAssetUI(asset) {
-        // ... (Your existing UI update logic here)
         const selectedAssetPreview = document.getElementById('selectedAssetPreview');
         const assetPreviewImg = document.getElementById('assetPreviewImg');
         const assetName = document.getElementById('assetName');
@@ -173,7 +457,6 @@
     }
 
     function clearAsset() {
-        // ... (Your existing clear asset logic here)
         const selectedAssetPreview = document.getElementById('selectedAssetPreview');
         const adobeDamBox = document.getElementById('adobeDamBox');
         const damTitle = document.getElementById('damTitle');
@@ -200,3 +483,6 @@
         initAssetSelector(false); 
     });
 </script>
+
+</body>
+</html>
