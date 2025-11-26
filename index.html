@@ -652,33 +652,7 @@ setupIMS() {
             // The SDK will handle it automatically via onAccessTokenReceived
         },
 
-        onAccessTokenReceived: (token) => {
-            console.log('✓ Access Token Received:', token);
-            this.state.isAuthenticated = true;
-            sessionStorage.setItem('adobe_authenticated', 'true');
-            sessionStorage.setItem('adobe_access_token', token);
-            sessionStorage.removeItem('pkce_verifier');
-            // Clean up URL
-            window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI);
-            // Now open selector
-            setTimeout(() => this.openSelector(), 500);
-        },
-
-        onErrorReceived: (type, msg) => {
-            console.error('IMS Error:', type, msg);
-            this.showToast('Error', msg || type, 'error');
-            // Reset modal on error
-            document.getElementById('authStep1').style.display = 'block';
-            document.getElementById('authStep2').style.display = 'none';
-        }
-    };
-
-    try {
-        PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
-    } catch (e) {
-        console.error('Failed to register IMS:', e);
-    }
-},
+      
 
         onAccessTokenReceived: (token) => {
             console.log('✓ Access Token Received');
