@@ -285,25 +285,29 @@
     // Store the IMS instance globally for re-use
     let imsInstance = null;
     
-    // --- 1. CONFIGURATION ---
+    // --- CONFIGURATION ---
     const AEM_HOST = 'https://author-p173552-e1855304.adobeaemcloud.com';
     const IMS_CLIENT_ID = '466f31740dc24133a32506acb2823d3f';
     
-    // CRITICAL FIX: Must match EXACTLY with Adobe Console configuration
-    // Default Redirect URI and Redirect URI Pattern must be configured in Console
+    // ✅ FIX #1: NO trailing slash here - must match Adobe Console exactly
     const GITHUB_PAGES_REDIRECT_URI = 'https://abiengithacct.github.io/adobe-asset-selector-ui';
 
-    // --- 2. IMS PROPERTIES (AUTHENTICATION) - CORRECTED ---
-    const imsProps = {
+    // ✅ FIX #2: Add imsAuthorizationURL for MFE postMessage communication
+    const IMS_PROPS = {
         imsClientId: IMS_CLIENT_ID,
         imsEnvironment: "prod", 
-        imsScope: "AdobeID,openid,aem.folders,aem.assets.author",  // FIX: Removed spaces after commas
-        redirectUrl: GITHUB_PAGES_REDIRECT_URI,  // Must match Console exactly
+        imsScope: "AdobeID,openid,aem.folders,aem.assets.author",
+        redirectUrl: GITHUB_PAGES_REDIRECT_URI,
+        imsAuthorizationUrl: "https://ims-na1.adobelogin.com/ims/authorize/v2",  // ✅ CRITICAL FIX
         modalMode: true,
         popUp: true,
-       imsAuthorizationUrl: "https://ims-na1.adobelogin.com/ims/authorize/v2",
         onAccessTokenReceived: (token) => {
-            console.log("✓ IMS Token Received successfully. Token:", token);
+            console.log("✓ IMS Token Received successfully.");
+            if (token && typeof token === 'object') {
+                console.log("  Token object keys:", Object.keys(token));
+            } else {
+                console.warn("⚠️ Token is:", token);
+            }
             showToast("Success", "Authenticated with Adobe. Ready to select assets.", 'success');
         },
         onErrorReceived: (type, msg) => {
@@ -312,42 +316,54 @@
         }
     };
 
-    // --- 3. INITIALIZE IMS SERVICE ---
+    // --- INITIALIZE IMS SERVICE ---
     function initializeImsService() {
-
         console.log("📄 Initializing IMS Service with config:", {
             clientId: IMS_CLIENT_ID,
             redirectUrl: GITHUB_PAGES_REDIRECT_URI,
             imsAuthorizationUrl: IMS_PROPS.imsAuthorizationUrl
         });
-        if (typeof PureJSSelectors !== 'undefined') {
-            try {
-                imsInstance = PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
-                console.log("✓ IMS Service Registered. Ready for OAuth PKCE Flow.");
-            } catch (error) {
-                console.error("✗ Failed to register IMS Service:", error);
-                showToast("Error", "Failed to initialize authentication service", 'error');
-            }
-        } else {
-            console.warn("⏳ PureJSSelectors library not yet loaded. Retrying in 500ms...");
+
+        if (typeof PureJSSelectors === 'undefined') {
+            console.warn("⏳ PureJSSelectors not yet loaded. Retrying in 500ms...");
             setTimeout(initializeImsService, 500);
+            return;
+        }
+
+        try {
+            imsInstance = PureJSSelectors.registerAssetsSelectorsAuthService(IMS_PROPS);
+            
+            // ✅ FIX #3: Validate imsInstance actually initialized
+            if (!imsInstance) {
+                throw new Error("registerAssetsSelectorsAuthService returned null/undefined");
+            }
+            
+            console.log("✓ IMS Service Registered Successfully");
+            console.log("  Instance type:", imsInstance.constructor.name);
+            
+        } catch (error) {
+            console.error("✗ Failed to register IMS Service:", error);
+            console.error("  Error message:", error.message);
+            console.error("  Error stack:", error.stack);
+            showToast("Error", "Failed to initialize authentication: " + error.message, 'error');
         }
     }
     
-    // --- 4. RENDER FUNCTION (Called by Button) ---
+    // --- RENDER ASSET SELECTOR ---
     function renderAssetSelectorWithAuthFlow() {
         const connectBtn = document.getElementById('connectDamBtn');
         
         if (!imsInstance) {
-            showToast("Error", "Authentication service not initialized. Please wait...", 'error');
-            console.error("IMS instance is null");
+            showToast("Error", "Authentication service not initialized. Retrying...", 'error');
+            console.error("IMS instance is null. Initializing...");
+            initializeImsService();
             return;
         }
         
-        // Disable button to prevent double-clicks
         connectBtn.disabled = true;
         connectBtn.textContent = "Loading...";
         
+        // ✅ FIX #4: Add imsAuthorizationUrl to asset selector props as well
         const assetSelectorProps = {
             aemHost: AEM_HOST,
             repositoryId: 'crx',
@@ -355,9 +371,8 @@
             selectMode: 'single',
             allowedAssetMimeTypes: ["image/png", "image/jpeg", "image/jpg"],
             authService: imsInstance,
-            imsAuthorizationUrl: "https://ims-na1.adobelogin.com/ims/authorize/v2",
+            imsAuthorizationUrl: "https://ims-na1.adobelogin.com/ims/authorize/v2",  // ✅ ADD HERE TOO
             
-            // Handlers for selection events
             onAssetSelect: (assets) => {
                 if (assets && assets.length > 0) {
                     const selectedAsset = assets[0];
@@ -377,19 +392,19 @@
         };
 
         try {
-            // Container where the Asset Selector MFE will load
             const container = document.getElementById('asset-selector-container');
+            container.innerHTML = '';  // Clear previous content
             
-            // Clear any previous content
-            container.innerHTML = '';
+            console.log("📂 Rendering Asset Selector with props:", assetSelectorProps);
             
-            // Render and show dialog
             PureJSSelectors.renderAssetSelectorWithAuthFlow(container, assetSelectorProps, () => {
-                const assetSelectorDialog = document.getElementById('asset-selector-dialog');
-                assetSelectorDialog.showModal();
+                console.log("✓ Asset Selector rendered successfully");
+                const dialog = document.getElementById('asset-selector-dialog');
+                dialog.showModal();
                 connectBtn.disabled = false;
                 connectBtn.textContent = "Connect to DAM";
             });
+            
         } catch (error) {
             console.error("✗ Failed to render Asset Selector:", error);
             showToast("Error", "Failed to open asset selector: " + error.message, 'error');
@@ -398,7 +413,7 @@
         }
     }
     
-    // --- 5. UTILITY FUNCTIONS ---
+    // --- UTILITY FUNCTIONS ---
     
     function updateAssetUI(asset) {
         const selectedAssetPreview = document.getElementById('selectedAssetPreview');
@@ -408,21 +423,16 @@
         const adobeDamBox = document.getElementById('adobeDamBox');
         const damTitle = document.getElementById('damTitle');
 
-        // Update preview UI
         assetPreviewImg.src = asset.uri || asset.path || '';
         assetName.textContent = asset.name || 'Unknown Asset';
         assetMeta.textContent = `Size: ${formatBytes(asset.size || 0)} | Type: ${asset.mimeType || 'unknown'}`;
         
-        // Show preview, hide DAM box
         selectedAssetPreview.classList.add('active');
         adobeDamBox.classList.add('connected');
         damTitle.textContent = '✓ Asset Selected: ' + (asset.name || 'Unknown');
         
-        // Store asset for later use
         window.selectedAsset = asset;
-        
         showToast("Success", asset.name + " selected", 'success');
-        console.log("Asset details:", asset);
     }
 
     function clearAsset() {
@@ -459,23 +469,23 @@
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 
-    // --- INITIALIZATION ---
+    // --- PAGE INITIALIZATION ---
     window.addEventListener('load', () => {
-        console.log("📄 Page loaded. Initializing IMS Service...");
-        initializeImsService();
-    });
-
-    // Handle OAuth redirect callback (if redirected back to this page)
-    window.addEventListener('load', () => {
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
+        console.log("📄 Page loaded. Current URL:", window.location.href);
+        console.log("   Redirect URI in code:", GITHUB_PAGES_REDIRECT_URI);
+        console.log("   Check if they match exactly (no trailing slash difference)");
         
-        if (code) {
-            console.log("✓ OAuth authorization code received:", code);
-            // PureJSSelectors should handle code exchange automatically
-            // This is just for monitoring
+        initializeImsService();
+        
+        // Check for OAuth callback
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('code')) {
+            console.log("✓ OAuth authorization code detected in URL");
+            console.log("   Code:", params.get('code').substring(0, 50) + "...");
+            console.log("   PureJSSelectors will exchange this for a token");
         }
     });
 </script>
+
 </body>
 </html>
