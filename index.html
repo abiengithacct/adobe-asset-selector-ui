@@ -346,54 +346,70 @@
             color: #6b7280;
         }
 
- /* Replace existing #asset-selector-dialog rule */
-#asset-selector-dialog {
-    background: white;
-    border-radius: 12px;
-    width: 85vw;           /* Slightly reduced width */
-    height: 85vh;          /* Reduced height to fit screen */
-    max-width: 1400px;
-    max-height: 900px;     /* Max height cap for large screens */
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 25px 80px rgba(0,0,0,0.4);
-    padding: 0;
-    border: none;
-}
+ dialog#asset-selector-dialog {
+            background: white;
+            border-radius: 12px;
+            width: 85vw;
+            height: 85vh;
+            max-width: 1400px;
+            max-height: 900px;
+            padding: 0;
+            border: none;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0;
+            z-index: 10000;
+        }
 
-        dialog#asset-selector-dialog::backdrop {
+      dialog#asset-selector-dialog::backdrop {
             background: rgba(0, 0, 0, 0.6);
         }
 
-        #asset-selector-container {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: white;
+        .dialog-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9fafb;
+        }
+
+        .dialog-title {
+            font-size: 16px;
+            font-weight: 600;
         }
 
         .dialog-close-btn {
-            position: absolute;
-            top: 16px;
-            right: 16px;
             background: white;
             border: 1px solid #d1d5db;
-            border-radius: 8px;
-            width: 36px;
-            height: 36px;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 100;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: all 0.2s;
+            padding: 0;
         }
 
         .dialog-close-btn:hover {
             background: #f3f4f6;
             border-color: #9ca3af;
+        }
+
+        #asset-selector-container {
+            width: 100%;
+            height: calc(100% - 57px);
+            overflow: auto;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* TOAST */
