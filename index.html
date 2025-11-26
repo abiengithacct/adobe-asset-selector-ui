@@ -7,9 +7,9 @@
     <title>MoEngage - Create Push Campaign (Adobe DAM)</title>
     
     <style>
-        /* (CSS STYLES - No changes needed here) */
+        /* --- ORIGINAL LAYOUT STYLES --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f5f7fa; color: #1a1a1a; }
+        body { font-family: -apple-system, BlinkMacMacFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f5f7fa; color: #1a1a1a; }
         .moe-header { background: #2c3e50; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .moe-logo { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
         .main-layout { display: flex; min-height: calc(100vh - 50px); }
@@ -40,7 +40,6 @@
         .adobe-dam-title { font-size: 15px; font-weight: 500; color: #2c3e50; margin-bottom: 16px; }
         .connect-dam-btn { background: white; color: #3498db; border: 1px solid #3498db; padding: 10px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-block; }
         .connect-dam-btn:hover { background: #3498db; color: white; }
-        .connect-dam-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .image-specs { font-size: 12px; color: #7f8c8d; line-height: 1.6; }
         .selected-asset-preview { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-top: 20px; display: none; animation: slideIn 0.3s; }
         .selected-asset-preview.active { display: block; }
@@ -51,25 +50,29 @@
         .btn-remove { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
         .btn-remove:hover { background: #c0392b; }
         
-        #asset-selector-dialog { background:white; border-radius:12px; width:90vw; height:90vh; max-width:1600px; display:flex; flex-direction:column; box-shadow:0 25px 80px rgba(0,0,0,0.4); }
+        /* --- NEW AUTH MODAL STYLES (Added to your existing CSS) --- */
+        #auth-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 12000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .auth-card { background: white; border-radius: 12px; width: 400px; padding: 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: slideUp 0.3s; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .auth-icon { width: 60px; height: 60px; background: #fcefe9; color: #eb1000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 20px; }
+        .auth-title { font-size: 20px; font-weight: 600; color: #2c3e50; margin-bottom: 8px; }
+        .auth-desc { font-size: 14px; color: #7f8c8d; margin-bottom: 24px; line-height: 1.5; }
+        .btn-authenticate { background: #eb1000; color: white; border: none; padding: 14px 32px; border-radius: 30px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; transition: transform 0.1s; box-shadow: 0 4px 12px rgba(235, 16, 0, 0.2); }
+        .btn-authenticate:hover { background: #c90e00; transform: translateY(-1px); }
+        
+        /* Dialog Styles */
+        #asset-selector-dialog { border: none; border-radius: 12px; width: 90vw; height: 90vh; max-width: 1600px; padding: 0; box-shadow: 0 25px 80px rgba(0,0,0,0.4); }
         #asset-selector-dialog::backdrop { background: rgba(0,0,0,0.8); }
-        #asset-selector-container { flex:1; overflow:hidden; background:white; }
-        
-        .dialog-header { height: 64px; background: linear-gradient(135deg, #2c3e50, #34495e); color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; border-radius: 12px 12px 0 0; }
-        .dialog-title { font-size: 18px; font-weight: 600; }
-        .dialog-close { background: rgba(255,255,255,0.1); border: none; color: white; font-size: 28px; cursor: pointer; width: 40px; height: 40px; border-radius: 8px; transition: all 0.2s; }
-        .dialog-close:hover { background: rgba(255,255,255,0.2); }
-        
+        #asset-selector-container { width: 100%; height: 100%; overflow: hidden; background: white; }
+        .dialog-close-btn { position: absolute; top: 15px; right: 15px; background: white; border: 1px solid #ddd; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
         .toast-container { position: fixed; top: 20px; right: 20px; z-index: 11000; display: flex; flex-direction: column; gap: 10px; }
         .toast { min-width: 320px; background: white; padding: 16px 20px; border-left: 4px solid #3498db; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 6px; animation: slideInRight 0.3s; }
         .toast.success { border-left-color: #27ae60; }
         .toast.error { border-left-color: #e74c3c; }
-        .toast.info { border-left-color: #3498db; }
-        .toast strong { display: block; margin-bottom: 4px; font-size: 14px; }
-        .toast span { font-size: 13px; color: #7f8c8d; }
         
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 768px) { .main-layout { flex-direction: column; } .sidebar { width: 100%; } .image-options { flex-direction: column; } }
     </style>
     
@@ -86,21 +89,43 @@
             <button class="create-new-btn">
                 <span style="font-size:18px;">+</span> Create New
             </button>
+            <div class="sidebar-item"><span class="icon">📊</span> Dashboards</div>
+            <div class="sidebar-item"><span class="icon">📈</span> Analyze</div>
+            <div class="sidebar-item"><span class="icon">👥</span> Segment</div>
             <div class="sidebar-item active"><span class="icon">📢</span> Engage</div>
+            <div class="sidebar-item"><span class="icon">📬</span> Inform</div>
+            <div class="sidebar-item"><span class="icon">🎨</span> Personalize</div>
         </div>
 
         <div class="main-content">
             <div class="page-header">
+                <div class="breadcrumb">Engage › Push Notifications › Create Campaign</div>
                 <h1 class="page-title">Create Push Notification</h1>
             </div>
 
             <div class="content-card">
+                <div class="rich-media-section">
+                    <h2 class="section-title">Rich media</h2>
+                    <div class="gif-option">
+                        <input type="checkbox" id="useGif">
+                        <label for="useGif" style="font-size:14px; color:#2c3e50;">Use GIF for Android 14+</label>
+                        <span class="new-badge">New</span>
+                    </div>
+                </div>
+
                 <div class="image-section">
                     <h2 class="section-title">Image</h2>
                     
+                    <div class="image-options">
+                        <div class="radio-option"><input type="radio" name="imageSource" id="imageUrl"><label for="imageUrl">Image URL</label></div>
+                        <div class="radio-option"><input type="radio" name="imageSource" id="uploadImage"><label for="uploadImage">Upload image</label></div>
+                        <div class="radio-option"><input type="radio" name="imageSource" id="merlinAI"><label for="merlinAI">Merlin AI Designer</label><span class="version-badge">v2.0</span></div>
+                        <div class="radio-option"><input type="radio" name="imageSource" id="uploadCMS" checked><label for="uploadCMS">Upload from CMS</label></div>
+                    </div>
+
                     <div class="adobe-dam-box" id="adobeDamBox">
                         <div class="adobe-dam-title" id="damTitle">Select an image from Adobe DAM</div>
-                        <button class="connect-dam-btn" id="connectDamBtn" onclick="launchAssetSelector()">Connect to DAM</button>
+                        <button class="connect-dam-btn" id="connectDamBtn" onclick="handleConnectClick()">Connect to DAM</button>
                     </div>
 
                     <div class="selected-asset-preview" id="selectedAssetPreview">
@@ -113,16 +138,28 @@
                             <button class="btn-remove" onclick="clearAsset()">Remove</button>
                         </div>
                     </div>
+
+                    <div class="image-specs">
+                        Use image size of around 25 KB. Recommended aspect ratio (width:height) 2.9:1 with buttons, 2.8:1 without buttons.<br>
+                        Supported File types: png, jpeg, jpg
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <dialog id="asset-selector-dialog">
-        <div class="dialog-header">
-            <span class="dialog-title">📁 Adobe Experience Manager</span>
-            <button class="dialog-close" onclick="closeAssetSelector()">×</button>
+    <div id="auth-modal">
+        <div class="auth-card">
+            <div class="auth-icon">A</div>
+            <h3 class="auth-title">Adobe Authentication</h3>
+            <p class="auth-desc">To access your assets, you need to verify your identity with Adobe Cloud.</p>
+            <button class="btn-authenticate" onclick="triggerAdobeLogin()">Authenticate with Adobe</button>
+            <div style="margin-top: 12px; font-size: 12px; color: #999; cursor: pointer;" onclick="document.getElementById('auth-modal').style.display='none'">Cancel</div>
         </div>
+    </div>
+
+    <dialog id="asset-selector-dialog">
+        <button class="dialog-close-btn" onclick="document.getElementById('asset-selector-dialog').close()">×</button>
         <div id="asset-selector-container"></div>
     </dialog>
 
@@ -139,27 +176,22 @@
     };
 
     let imsInstance = null;
-
-    // Corrected Modal Logic for <dialog> element
-    function openAssetSelectorModal() {
-        document.getElementById('asset-selector-dialog').showModal();
-    }
-
-    function closeAssetSelector() {
-        document.getElementById('asset-selector-dialog').close();
-    }
+    let isAuthenticated = false;
 
     function showToast(title, body, type = 'info') {
-        const toastContainer = document.getElementById('toastContainer');
+        const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.innerHTML = `<strong>${title}</strong><span>${body}</span>`;
-        toastContainer.appendChild(toast);
+        container.appendChild(toast);
         setTimeout(() => toast.remove(), 4000);
     }
 
-    // 1. Register Auth on Page Load
-    function initializeAuth() {
+    // 1. INITIALIZATION (Runs on Page Load)
+    function initApp() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasCode = urlParams.get('code');
+
         const imsProps = {
             imsClientId: CONFIG.CLIENT_ID,
             imsScope: CONFIG.SCOPE,
@@ -168,107 +200,117 @@
             imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
             
             onImsServiceInitialized: (service) => {
-                console.log('✓ IMS initialized');
+                console.log('✓ IMS Service Ready');
                 imsInstance = service;
+                
+                // If we have a code (redirect return), we are effectively authenticated.
+                if (hasCode) {
+                    console.log('✓ Redirect detected, auto-launching selector...');
+                    isAuthenticated = true;
+                    renderSelector();
+                }
             },
             onAccessTokenReceived: (token) => {
-                console.log('✓ Token received');
-                showToast('Success', 'Authenticated with Adobe', 'success');
+                console.log('✓ Token Received');
+                isAuthenticated = true;
+                showToast('Success', 'Adobe Authenticated', 'success');
                 // Clean URL
                 window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI);
             },
             onErrorReceived: (type, msg) => {
-                console.error('✗ Auth error:', type, msg);
-                showToast('Error', msg || type, 'error');
+                console.error('✗ Auth Error:', type, msg);
+                showToast('Auth Error', msg || type, 'error');
             }
         };
 
         try {
-            imsInstance = PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
-        } catch (error) {
-            console.error('Registration error:', error);
-            showToast('Error', error.message, 'error');
+            PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
+        } catch (e) {
+            console.error("SDK Error", e);
         }
     }
 
-    // 2. Render Selector on Button Click
-    function launchAssetSelector() {
-        if (!imsInstance) {
-            showToast('Error', 'Auth not initialized', 'error');
-            initializeAuth(); // Attempt re-init
-            return;
+    // 2. USER CLICKS "Connect to DAM"
+    function handleConnectClick() {
+        if (isAuthenticated) {
+            renderSelector();
+        } else {
+            document.getElementById('auth-modal').style.display = 'flex';
         }
+    }
+
+    // 3. USER CLICKS "Authenticate" IN MODAL
+    function triggerAdobeLogin() {
+        document.getElementById('auth-modal').style.display = 'none';
+        
+        if (imsInstance) {
+            // This click forces the SDK popup to open without blocking
+            renderSelector(); 
+        } else {
+            showToast('Error', 'SDK not ready. Refreshing...', 'error');
+            setTimeout(() => location.reload(), 1000);
+        }
+    }
+
+    // 4. RENDER THE ASSET SELECTOR
+    function renderSelector() {
+        const container = document.getElementById('asset-selector-container');
+        container.innerHTML = ''; // Clear previous
 
         const assetProps = {
-            //aemHost: CONFIG.AEM_HOST,
+            aemHost: CONFIG.AEM_HOST,
             imsOrg: CONFIG.IMS_ORG,
-            // repositoryId REMOVED to allow SDK to discover the correct environment
             env: 'prod',
+            
+            // ✅ CRITICAL FIX: Hardcoded Repo ID bypasses the "Discovery" error
+            repositoryId: 'author-p173552-e1855304.adobeaemcloud.com',
+            
             selectMode: 'single',
             allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
             authService: imsInstance,
 
             onAssetSelect: (assets) => {
                 if (assets && assets.length > 0) {
-                    updateAssetUI(assets[0]);
+                    updateUI(assets[0]);
                 }
-                closeAssetSelector();
+                document.getElementById('asset-selector-dialog').close();
             }
         };
 
-        console.log('📤 Launching Selector:', assetProps);
-
-        const container = document.getElementById('asset-selector-container');
-        container.innerHTML = '';
+        console.log('📤 Rendering with Props:', assetProps);
 
         PureJSSelectors.renderAssetSelectorWithAuthFlow(
             container,
             assetProps,
             () => {
-                console.log('✓ Rendered, opening dialog');
-                openAssetSelectorModal();
+                console.log('✓ Selector Rendered');
+                document.getElementById('asset-selector-dialog').showModal();
             }
         );
     }
 
-    function updateAssetUI(asset) {
-        const preview = document.getElementById('selectedAssetPreview');
+    // --- UI Utilities ---
+    function updateUI(asset) {
         const img = document.getElementById('assetPreviewImg');
-        
-        // Robust image URL retrieval
-        let imgSrc = asset.uri || asset.path;
+        let src = asset.path;
         if (asset._links && asset._links['http://ns.adobe.com/adobecloud/rel/rendition']) {
-             imgSrc = asset._links['http://ns.adobe.com/adobecloud/rel/rendition'][0].href;
+            src = asset._links['http://ns.adobe.com/adobecloud/rel/rendition'][0].href;
         }
-
-        img.src = imgSrc || '';
-        document.getElementById('assetName').textContent = asset.name || 'Unknown';
-        document.getElementById('assetMeta').textContent = `${asset.mimeType || 'unknown'}`;
-        
-        preview.classList.add('active');
+        img.src = src;
+        document.getElementById('assetName').textContent = asset.name || 'Asset';
+        document.getElementById('selectedAssetPreview').style.display = 'block';
         document.getElementById('adobeDamBox').classList.add('connected');
         document.getElementById('damTitle').textContent = '✓ Asset Selected';
         showToast('Success', asset.name + ' selected', 'success');
     }
 
     function clearAsset() {
-        document.getElementById('selectedAssetPreview').classList.remove('active');
+        document.getElementById('selectedAssetPreview').style.display = 'none';
         document.getElementById('adobeDamBox').classList.remove('connected');
         document.getElementById('damTitle').textContent = 'Select an image from Adobe DAM';
-        showToast('Info', 'Asset cleared', 'info');
     }
 
-    function formatBytes(bytes, decimals = 2) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-    }
-
-    // Initialize on page load
-    window.addEventListener('load', initializeAuth);
+    window.addEventListener('load', initApp);
 </script>
 
 </body>
