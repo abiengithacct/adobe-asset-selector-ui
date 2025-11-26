@@ -394,14 +394,17 @@ function initAssetSelector(autoLaunch = false) {
         imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
         modalMode: true, // Use pop-up for login
 
-        onImsServiceInitialized: (service) => {
+      onImsServiceInitialized: (service) => {
             imsInstance = service;
             
-            // Check if we were redirected (codePresent) OR if the user just clicked the button (autoLaunch)
-            if (codePresent || autoLaunch) {
-                setupAndRenderSelector(autoLaunch);
+            const shouldLaunch = codePresent || autoLaunch;
+
+            if (shouldLaunch) {
+                // Force modal open if we just came from a redirect (codePresent is true)
+                // OR if the user manually clicked the button (autoLaunch is true).
+                setupAndRenderSelector(true); // Always pass TRUE here to open the modal
             } else {
-                // If no code and not an auto-launch, we wait for the user to click.
+                // Initial page load, no redirect, button is available.
                 connectDamBtn.disabled = false;
                 connectDamBtn.textContent = 'Connect to DAM';
             }
