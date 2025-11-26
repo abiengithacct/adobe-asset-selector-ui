@@ -7,7 +7,6 @@
     <title>MoEngage - Create Push Campaign</title>
     
     <style>
-        /* ... [ALL YOUR PROVIDED CSS STYLES GO HERE] ... */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f5f7fa; color: #1a1a1a; }
         
@@ -86,6 +85,7 @@
             cursor: pointer; transition: all 0.2s; display: inline-block;
         }
         .connect-dam-btn:hover { background: #3498db; color: white; }
+        .connect-dam-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         
         .image-specs { font-size: 12px; color: #7f8c8d; line-height: 1.6; }
         
@@ -108,42 +108,33 @@
         }
         .btn-remove:hover { background: #c0392b; }
 
-
-    /* ADOBE SELECTOR DIALOG */
-    #asset-selector-dialog {
-        /* Fixes modal centering */
-        position: fixed; /* Ensures placement is relative to viewport */
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        /* ADOBE SELECTOR DIALOG */
+        #asset-selector-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: none; 
+            border-radius: 12px; 
+            box-shadow: 0 25px 80px rgba(0,0,0,0.4); 
+            background: white; 
+            padding: 0;
+            width: 90vw; 
+            height: 90vh; 
+            max-width: 1600px;
+        }
         
-        /* UI FIX: Removes browser default border/margin on <dialog> */
-        border: none; 
-        border-radius: 12px; 
-        box-shadow: 0 25px 80px rgba(0,0,0,0.4); 
-        background: white; 
-        padding: 0;
+        #asset-selector-dialog::backdrop { 
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+        }
         
-        /* Ensures size is consistent */
-        width: 90vw; 
-        height: 90vh; 
-        max-width: 1600px; 
-    }
-    
-    #asset-selector-dialog::backdrop { 
-        background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
-    }
-    
-    /* Ensure the MFE container fills the dialog space cleanly */
-    #asset-selector-container { 
-        height: calc(100% - 64px); 
-        overflow: hidden; 
-        background: white;
-        /* UI FIX: Removed any external padding/margins */
-        padding: 0; 
-        margin: 0;
-    }
-    
+        #asset-selector-container { 
+            height: calc(100% - 64px); 
+            overflow: hidden; 
+            background: white;
+            padding: 0; 
+            margin: 0;
+        }
         
         .dialog-header { 
             height: 64px; background: linear-gradient(135deg, #2c3e50, #34495e);
@@ -157,10 +148,6 @@
             border-radius: 8px; transition: all 0.2s;
         }
         .dialog-close:hover { background: rgba(255,255,255,0.2); }
-        
-        #asset-selector-container { 
-            height: calc(100% - 64px); overflow: hidden; background: white;
-        }
         
         /* TOAST */
         .toast-container { position: fixed; top: 20px; right: 20px; z-index: 11000; display: flex; flex-direction: column; gap: 10px; }
@@ -261,7 +248,7 @@
 
                     <div class="adobe-dam-box" id="adobeDamBox">
                         <div class="adobe-dam-title" id="damTitle">Select an image from Adobe DAM</div>
-                        <button class="connect-dam-btn" onclick="renderAssetSelectorWithAuthFlow()">Connect to DAM</button>
+                        <button class="connect-dam-btn" id="connectDamBtn" onclick="renderAssetSelectorWithAuthFlow()">Connect to DAM</button>
                     </div>
 
                     <div class="selected-asset-preview" id="selectedAssetPreview">
@@ -286,7 +273,7 @@
 
     <dialog id="asset-selector-dialog">
         <div class="dialog-header">
-            <span class="dialog-title">Adobe Experience Manager - Asset Selector</span>
+            <span class="dialog-title">📁 Adobe Experience Manager - Asset Selector</span>
             <button class="dialog-close" onclick="document.getElementById('asset-selector-dialog').close()">×</button>
         </div>
         <div id="asset-selector-container"></div>
@@ -295,225 +282,192 @@
     <div class="toast-container" id="toastContainer"></div>
 
 <script>
-   const CONFIG = {
-            IMS_CLIENT_ID: '466f31740dc24133a32506acb2823d3f',
-            // CRITICAL: This must match your Adobe Console redirect URI exactly
-            REDIRECT_URI: window.location.origin + window.location.pathname,
-            // Fallback for root domain
-            REDIRECT_URI_FALLBACK: window.location.origin + '/',
-            
-            AEM_HOST: 'https://author-p173552-e1855304.adobeaemcloud.com',
-            IMS_HOST: 'https://ims-na1.adobelogin.com',
-            IMS_TOKEN_ENDPOINT: 'https://ims-na1.adobelogin.com/ims/token/v3',
-            IMS_AUTHORIZE_ENDPOINT: 'https://ims-na1.adobelogin.com/ims/authorize/v2',
-            
-            SCOPES: ['openid', 'AdobeID', 'aem.assets.author', 'aem.folders'],
-        };
+    // Store the IMS instance globally for re-use
+    let imsInstance = null;
+    
+    // --- 1. CONFIGURATION ---
+    const AEM_HOST = 'https://author-p173552-e1855304.adobeaemcloud.com';
+    const IMS_CLIENT_ID = '466f31740dc24133a32506acb2823d3f';
+    
+    // CRITICAL FIX: Must match EXACTLY with Adobe Console configuration
+    // Default Redirect URI and Redirect URI Pattern must be configured in Console
+    const GITHUB_PAGES_REDIRECT_URI = 'https://abiengithacct.github.io/adobe-asset-selector-ui';
 
-        // Store OAuth state for PKCE validation
-        let oauthState = {
-            imsInstance: null,
-            accessToken: null,
-            codeVerifier: null,
-        };
-
-        // ========================================
-        // PKCE HELPER FUNCTIONS
-        // ========================================
-        
-        function generateCodeChallenge() {
-            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-            let codeVerifier = '';
-            for (let i = 0; i < 128; i++) {
-                codeVerifier += characters.charAt(Math.floor(Math.random() * characters.length));
-            }
-            return codeVerifier;
+    // --- 2. IMS PROPERTIES (AUTHENTICATION) - CORRECTED ---
+    const imsProps = {
+        imsClientId: IMS_CLIENT_ID,
+        imsEnvironment: "prod", 
+        imsScope: "AdobeID,openid,aem.folders,aem.assets.author",  // FIX: Removed spaces after commas
+        redirectUrl: GITHUB_PAGES_REDIRECT_URI,  // Must match Console exactly
+        modalMode: true,
+        popUp: true,
+        onAccessTokenReceived: (token) => {
+            console.log("✓ IMS Token Received successfully. Token:", token);
+            showToast("Success", "Authenticated with Adobe. Ready to select assets.", 'success');
+        },
+        onErrorReceived: (type, msg) => {
+            console.error("✗ IMS Error:", type, msg);
+            showToast("Authentication Failed", `${type}: ${msg}`, 'error');
         }
+    };
 
-        async function generateCodeChallengeSha256(codeVerifier) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(codeVerifier);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => String.fromCharCode(b)).join('');
-            return btoa(hashHex).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-        }
-
-        // ========================================
-        // HANDLE OAUTH CALLBACK (Hash Parameters)
-        // ========================================
-        
-        function handleOAuthCallback() {
-            const hash = window.location.hash.substring(1);
-            const params = new URLSearchParams(hash);
-            const accessToken = params.get('access_token');
-            const errorParam = params.get('error');
-
-            if (accessToken) {
-                console.log('Access token received from OAuth callback');
-                oauthState.accessToken = accessToken;
-                // Clear URL hash
-                window.history.replaceState({}, document.title, window.location.pathname);
-                initializeImsService();
-                return true;
-            }
-
-            if (errorParam) {
-                showToast('OAuth Error', `${errorParam}: ${params.get('error_description') || 'Unknown error'}`, 'error');
-                console.error('OAuth Error:', errorParam, params.get('error_description'));
-                return false;
-            }
-
-            return false;
-        }
-
-        // ========================================
-        // INITIALIZE IMS SERVICE
-        // ========================================
-        
-        function initializeImsService() {
-            if (typeof PureJSSelectors === 'undefined') {
-                console.error('PureJSSelectors not loaded yet');
-                setTimeout(initializeImsService, 500);
-                return;
-            }
-
-            const imsProps = {
-                imsClientId: CONFIG.IMS_CLIENT_ID,
-                imsScope: CONFIG.SCOPES.join(', '),
-                redirectUrl: CONFIG.REDIRECT_URI,
-                modalMode: true,
-                autoRedirect: false,
-                
-                onAccessTokenReceived: (token) => {
-                    console.log('✓ IMS Token received successfully');
-                    oauthState.accessToken = token;
-                    showToast('Success', 'Connected to Adobe IMS', 'success');
-                },
-                
-                onErrorReceived: (type, msg) => {
-                    showToast('IMS Auth Error', msg, 'error');
-                    console.error('IMS Error:', type, msg);
-                },
-            };
-
+    // --- 3. INITIALIZE IMS SERVICE ---
+    function initializeImsService() {
+        if (typeof PureJSSelectors !== 'undefined') {
             try {
-                oauthState.imsInstance = PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
-                console.log('✓ IMS Service initialized');
+                imsInstance = PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
+                console.log("✓ IMS Service Registered. Ready for OAuth PKCE Flow.");
             } catch (error) {
-                console.error('Failed to initialize IMS:', error);
-                showToast('Error', 'Failed to initialize IMS service', 'error');
+                console.error("✗ Failed to register IMS Service:", error);
+                showToast("Error", "Failed to initialize authentication service", 'error');
             }
+        } else {
+            console.warn("⏳ PureJSSelectors library not yet loaded. Retrying in 500ms...");
+            setTimeout(initializeImsService, 500);
         }
-
-        // ========================================
-        // RENDER ASSET SELECTOR WITH AUTH FLOW
-        // ========================================
+    }
+    
+    // --- 4. RENDER FUNCTION (Called by Button) ---
+    function renderAssetSelectorWithAuthFlow() {
+        const connectBtn = document.getElementById('connectDamBtn');
         
-        function renderAssetSelectorWithAuthFlow() {
-            if (!oauthState.imsInstance) {
-                showToast('Error', 'IMS Service not initialized', 'info');
-                return;
+        if (!imsInstance) {
+            showToast("Error", "Authentication service not initialized. Please wait...", 'error');
+            console.error("IMS instance is null");
+            return;
+        }
+        
+        // Disable button to prevent double-clicks
+        connectBtn.disabled = true;
+        connectBtn.textContent = "Loading...";
+        
+        const assetSelectorProps = {
+            aemHost: AEM_HOST,
+            repositoryId: 'crx',
+            env: 'prod',
+            selectMode: 'single',
+            allowedAssetMimeTypes: ["image/png", "image/jpeg", "image/jpg"],
+            authService: imsInstance,
+            
+            // Handlers for selection events
+            onAssetSelect: (assets) => {
+                if (assets && assets.length > 0) {
+                    const selectedAsset = assets[0];
+                    console.log("✓ Asset selected:", selectedAsset);
+                    updateAssetUI(selectedAsset);
+                }
+                document.getElementById('asset-selector-dialog').close();
+                connectBtn.disabled = false;
+                connectBtn.textContent = "Connect to DAM";
+            },
+            onError: (error) => {
+                console.error("✗ Asset Selector Error:", error);
+                showToast("Asset Selector Error", error.message || "Failed to load assets", 'error');
+                connectBtn.disabled = false;
+                connectBtn.textContent = "Connect to DAM";
             }
+        };
 
+        try {
+            // Container where the Asset Selector MFE will load
             const container = document.getElementById('asset-selector-container');
-            const assetSelectorProps = {
-                aemHost: CONFIG.AEM_HOST,
-                repositoryId: 'crx',
-                env: 'prod',
-                selectMode: 'single',
-                allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-                authService: oauthState.imsInstance,
-                
-                onAssetSelect: (assets) => {
-                    if (assets && assets.length > 0) {
-                        const selectedAsset = assets[0];
-                        updateAssetUI(selectedAsset);
-                        sendAssetToServer(selectedAsset);
-                    }
-                    document.getElementById('asset-selector-dialog').close();
-                },
-                
-                onError: (error) => {
-                    showToast('Asset Selector Error', error.details || error.message || 'Unknown error', 'error');
-                    console.error('Asset Selector Error:', error);
-                },
-            };
-
+            
+            // Clear any previous content
+            container.innerHTML = '';
+            
+            // Render and show dialog
             PureJSSelectors.renderAssetSelectorWithAuthFlow(container, assetSelectorProps, () => {
-                document.getElementById('asset-selector-dialog').showModal();
+                const assetSelectorDialog = document.getElementById('asset-selector-dialog');
+                assetSelectorDialog.showModal();
+                connectBtn.disabled = false;
+                connectBtn.textContent = "Connect to DAM";
             });
+        } catch (error) {
+            console.error("✗ Failed to render Asset Selector:", error);
+            showToast("Error", "Failed to open asset selector: " + error.message, 'error');
+            connectBtn.disabled = false;
+            connectBtn.textContent = "Connect to DAM";
         }
+    }
+    
+    // --- 5. UTILITY FUNCTIONS ---
+    
+    function updateAssetUI(asset) {
+        const selectedAssetPreview = document.getElementById('selectedAssetPreview');
+        const assetPreviewImg = document.getElementById('assetPreviewImg');
+        const assetName = document.getElementById('assetName');
+        const assetMeta = document.getElementById('assetMeta');
+        const adobeDamBox = document.getElementById('adobeDamBox');
+        const damTitle = document.getElementById('damTitle');
 
-        // ========================================
-        // UTILITY FUNCTIONS
-        // ========================================
+        // Update preview UI
+        assetPreviewImg.src = asset.uri || asset.path || '';
+        assetName.textContent = asset.name || 'Unknown Asset';
+        assetMeta.textContent = `Size: ${formatBytes(asset.size || 0)} | Type: ${asset.mimeType || 'unknown'}`;
         
-        function updateAssetUI(asset) {
-            const preview = document.getElementById('selectedAssetPreview');
-            const img = document.getElementById('assetPreviewImg');
-            const name = document.getElementById('assetName');
-            const meta = document.getElementById('assetMeta');
-
-            img.src = asset.downloadUrl || asset.url || '';
-            name.textContent = asset.name || 'Unknown Asset';
-            meta.textContent = `Size: ${formatBytes(asset.size || 0)} | Type: ${asset.mimeType || 'unknown'}`;
-            
-            preview.classList.add('active');
-            
-            const damBox = document.getElementById('adobeDamBox');
-            damBox.classList.add('connected');
-            document.getElementById('damTitle').textContent = '✓ Connected to Adobe DAM';
-        }
-
-        function sendAssetToServer(asset) {
-            console.log('Selected Asset:', asset);
-            // Send to your backend if needed
-            // Example: fetch('/api/asset', { method: 'POST', body: JSON.stringify(asset) })
-        }
-
-        function clearAsset() {
-            document.getElementById('selectedAssetPreview').classList.remove('active');
-            document.getElementById('adobeDamBox').classList.remove('connected');
-            document.getElementById('damTitle').textContent = 'Select an image from Adobe DAM';
-        }
-
-        function formatBytes(bytes, decimals = 2) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-        }
-
-        function showToast(title, body, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `<strong>${title}</strong><span>${body}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 4000);
-        }
-
-        // ========================================
-        // INITIALIZATION ON PAGE LOAD
-        // ========================================
+        // Show preview, hide DAM box
+        selectedAssetPreview.classList.add('active');
+        adobeDamBox.classList.add('connected');
+        damTitle.textContent = '✓ Asset Selected: ' + (asset.name || 'Unknown');
         
-        window.addEventListener('load', () => {
-            // Check for OAuth callback
-            const isCallback = handleOAuthCallback();
-            
-            // Always initialize IMS service
-            initializeImsService();
-
-            // Debug: Log actual URLs
-            console.log('Current Origin:', window.location.origin);
-            console.log('Current Pathname:', window.location.pathname);
-            console.log('Configured Redirect URI:', CONFIG.REDIRECT_URI);
-            console.log('IMS Client ID:', CONFIG.IMS_CLIENT_ID);
-        });
+        // Store asset for later use
+        window.selectedAsset = asset;
         
-    </script>
+        showToast("Success", asset.name + " selected", 'success');
+        console.log("Asset details:", asset);
+    }
+
+    function clearAsset() {
+        const selectedAssetPreview = document.getElementById('selectedAssetPreview');
+        const adobeDamBox = document.getElementById('adobeDamBox');
+        const damTitle = document.getElementById('damTitle');
+        
+        selectedAssetPreview.classList.remove('active');
+        adobeDamBox.classList.remove('connected');
+        damTitle.textContent = 'Select an image from Adobe DAM';
+        
+        window.selectedAsset = null;
+        showToast("Info", "Asset cleared", 'info');
+    }
+
+    function showToast(title, body, type = 'info') {
+        const toastContainer = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<strong>${title}</strong><span>${body}</span>`;
+        toastContainer.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 4000);
+    }
+
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // --- INITIALIZATION ---
+    window.addEventListener('load', () => {
+        console.log("📄 Page loaded. Initializing IMS Service...");
+        initializeImsService();
+    });
+
+    // Handle OAuth redirect callback (if redirected back to this page)
+    window.addEventListener('load', () => {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        
+        if (code) {
+            console.log("✓ OAuth authorization code received:", code);
+            // PureJSSelectors should handle code exchange automatically
+            // This is just for monitoring
+        }
+    });
+</script>
 </body>
 </html>
