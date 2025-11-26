@@ -369,61 +369,64 @@
         );
     }
 
-    /**
-     * Initializes IMS service and handles authentication flow (token check or login start).
-     * @param {boolean} autoLaunch - Whether to automatically show the dialog after successful login.
-     */
-    function initAssetSelector(autoLaunch = false) {
-        if (!window.PureJSSelectors) {
-            showToast('Error', 'SDK not loaded. Please wait.', 'error');
-            setTimeout(() => initAssetSelector(autoLaunch), 500);
-            return;
-        }
+    /**
+     * Initializes IMS service and handles authentication flow (token check or login start).
+     * @param {boolean} autoLaunch - Whether to automatically show the dialog after successful login.
+     */
+    function initAssetSelector(autoLaunch = false) {
+        if (!window.PureJSSelectors) {
+            showToast('Error', 'SDK not loaded. Please wait.', 'error');
+            setTimeout(() => initAssetSelector(autoLaunch), 500);
+            return;
+        }
 
-        connectDamBtn.disabled = true;
-        connectDamBtn.textContent = 'Initializing...';
+        connectDamBtn.disabled = true;
+        connectDamBtn.textContent = 'Initializing...';
 
-        const imsProps = {
-            imsClientId: CONFIG.CLIENT_ID,
-            imsEnvironment: 'prod',
-            imsScope: CONFIG.SCOPE,
-            redirectUrl: CONFIG.REDIRECT_URI,
-            imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
-            modalMode: true, // Use pop-up for login
+        const imsProps = {
+            imsClientId: CONFIG.CLIENT_ID,
+            imsEnvironment: 'prod',
+            imsScope: CONFIG.SCOPE,
+            redirectUrl: CONFIG.REDIRECT_URI,
+            imsAuthorizationUrl: CONFIG.IMS_AUTH_URL,
+            modalMode: true, // Use pop-up for login
 
-            onImsServiceInitialized: (service) => {
-                imsInstance = service;
-                // If we land here after a redirect with a 'code', the SDK handles token exchange internally.
-                if (imsInstance.hasAccessToken() || new URLSearchParams(window.location.search).get('code')) {
-                    setupAndRenderSelector(autoLaunch);
-                } else {
-                    // Ready to connect, awaiting user click
-                    connectDamBtn.disabled = false;
-                    connectDamBtn.textContent = 'Connect to DAM';
-                }
-            },
-            onAccessTokenReceived: (token) => {
-                // Fired upon token receipt/exchange, especially after a successful pop-up login.
-                showToast('Success', 'Authenticated with Adobe', 'success');
-                // Clean up URL after token exchange
-                window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI); 
-            },
-            onErrorReceived: (type, msg) => {
-                console.error('✗ IMS Error:', type, msg);
-                showToast('Error', msg || 'Authentication failed.', 'error');
-                connectDamBtn.disabled = false;
-                connectDamBtn.textContent = 'Connect to DAM';
-            }
-        };
+            onImsServiceInitialized: (service) => {
+                imsInstance = service;
+               
+                // Check if a code is present (redirect) OR if an access token can be retrieved.
+                if (new URLSearchParams(window.location.search).get('code') || imsInstance.getAccessToken()) {
+                    setupAndRenderSelector(autoLaunch);
+                } else {
+                    // Ready to connect, awaiting user click
+                    connectDamBtn.disabled = false;
+                    connectDamBtn.textContent = 'Connect to DAM';
+                }
+            },
+            
+            // ... (rest of imsProps remains the same)
+            onAccessTokenReceived: (token) => {
+                // Fired upon token receipt/exchange, especially after a successful pop-up login.
+                showToast('Success', 'Authenticated with Adobe', 'success');
+                // Clean up URL after token exchange
+                window.history.replaceState({}, document.title, CONFIG.REDIRECT_URI); 
+            },
+            onErrorReceived: (type, msg) => {
+                console.error('✗ IMS Error:', type, msg);
+                showToast('Error', msg || 'Authentication failed.', 'error');
+                connectDamBtn.disabled = false;
+                connectDamBtn.textContent = 'Connect to DAM';
+            }
+        };
 
-        try {
-            window.PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
-        } catch (error) {
-            console.error('IMS registration error:', error);
-            showToast('Error', 'IMS registration failed: ' + error.message, 'error');
-        }
-    }
-    
+        try {
+            window.PureJSSelectors.registerAssetsSelectorsAuthService(imsProps);
+        } catch (error) {
+            console.error('IMS registration error:', error);
+            showToast('Error', 'IMS registration failed: ' + error.message, 'error');
+        }
+    }
+     
     // Function bound to the button click (onclick="launchAssetSelector()")
     function launchAssetSelector() {
         // Only launch the selector modal if we have a token (already logged in)
