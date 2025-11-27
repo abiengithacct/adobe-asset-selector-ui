@@ -10,7 +10,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        
+        }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -346,27 +346,31 @@
             color: #6b7280;
         }
 
- dialog#asset-selector-dialog {
-            background: white;
-            border-radius: 12px;
-            width: 85vw;
-            height: 85vh;
-            max-width: 1400px;
-            max-height: 900px;
-            padding: 0;
-            border: none;
-            box-shadow: 0 25px 80px rgba(0,0,0,0.4);
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            margin: 0;
-            z-index: 10000;
-        }
+dialog#asset-selector-dialog {
+    background: white;
+    border-radius: 12px;
+    width: 90vw;
+    height: 90vh;
+    max-width: none;  /* CHANGED: remove max-width constraint */
+    max-height: none; /* CHANGED: remove max-height constraint */
+    padding: 0;
+    border: none;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    z-index: 10000;
+    inset: unset;
+    display: flex;
+    flex-direction: column;
+}
 
-      dialog#asset-selector-dialog::backdrop {
-            background: rgba(0, 0, 0, 0.6);
-        }
+dialog#asset-selector-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+}
 
         .dialog-header {
             padding: 16px 24px;
@@ -402,15 +406,14 @@
             border-color: #9ca3af;
         }
 
-        #asset-selector-container {
-            width: 100%;
-            height: calc(100% - 57px);
-            overflow: auto;
-            padding: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+#asset-selector-container {
+    width: 100%;
+    height: 100%;  /* CRITICAL: was calc(100% - 57px) */
+    overflow: hidden;
+    padding: 0;
+    display: flex;
+    flex: 1;  /* ADDED */
+}
 
         /* TOAST */
         .toast-container {
@@ -594,10 +597,9 @@
     </div>
 </div>
 
-    <dialog id="asset-selector-dialog">
-        <button class="dialog-close-btn" onclick="app.closeSelector()">×</button>
-        <div id="asset-selector-container"></div>
-    </dialog>
+<dialog id="asset-selector-dialog">
+    <div id="asset-selector-container"></div>
+</dialog>
 
     <div class="toast-container" id="toastContainer"></div>
 
@@ -692,65 +694,87 @@
                 }
             },
 
-          openSelector() {
-    // ✅ ADDED: Close auth modal to prevent overlap
-    this.closeAuthModal();
+            openSelector() {
+                if (!this.state.imsService) {
+                    this.showToast('Error', 'SDK not ready. Reloading...', 'error');
+                    setTimeout(() => window.location.reload(), 1000);
+                    return;
+                }
+
+                const dialog = document.getElementById('asset-selector-dialog');
+                const container = document.getElementById('asset-selector-container');
+
+                // Clear previous state
+                container.innerHTML = '';
+                this.state.selectorOpen = true;
+
+        const assetProps = {
+    imsOrg: CONFIG.IMS_ORG,
+    repositoryId: 'author-p173552-e1855304.adobeaemcloud.com',  // ✅ FIXED
+    env: 'prod',
+    selectMode: 'single',
+    allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],  // ✅ EXPANDED
+    authService: this.state.imsService,
+    aemHost: CONFIG.AEM_HOST,  // ✅ ADDED
     
-    if (!this.state.imsService) {
-        this.showToast('Error', 'SDK not ready. Reloading...', 'error');
-        setTimeout(() => window.location.reload(), 1000);
-        return;
-    }
-
-    const dialog = document.getElementById('asset-selector-dialog');
-    const container = document.getElementById('asset-selector-container');
-
-    // Clear previous state
-    container.innerHTML = '';
-    this.state.selectorOpen = true;
-
-    // ✅ CLEAN assetProps - NO duplicates, NO wrong functions
-    const assetProps = {
-        imsOrg: CONFIG.IMS_ORG,
-        repositoryId: 'author-p173552-e1855304.adobeaemcloud.com',
-        authService: this.state.imsService,
-        env: 'prod',
-        selectMode: 'single',
-        allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],
-        hideTreeNav: false,
-        colorScheme: 'light',
-
-        onAssetSelect: (assets) => {
-            console.log('✓ Asset Selected:', assets);
-            if (assets && assets.length > 0) {
-                this.updateUIWithAsset(assets[0]);  // ✅ Use "this." - correct method
-            }
-            this.closeSelector();  // ✅ Use "this." - correct method
-        },
-
-        onCancel: () => {
-            console.log('✓ Selection Cancelled');
-            this.closeSelector();  // ✅ Use "this." - correct method
+    // FROM ADOBE DOCS - add these:
+   /* hideTreeNav: false,        // Show folder tree
+    dialogSize: 'large',       // Size of modal
+    colorScheme: 'light',      // Theme
+    onAssetSelect: (assets) => {
+        console.log('✓ Asset Selected:', assets);  // ✅ Better logging
+        if (assets && assets.length > 0) {
+            this.updateUIWithAsset(assets[0]);
         }
-    };
+        this.closeSelector();
+    },
 
-    console.log('📤 Opening Selector with:', assetProps);
+    onCancel: () => {
+        console.log('✓ Selection Cancelled');
+        this.closeSelector();
+    }*/
 
-    try {
-        PureJSSelectors.renderAssetSelectorWithAuthFlow(
-            container,
-            assetProps,
-            () => {
-                console.log('✓ Asset Selector Rendered');
-                dialog.showModal();
+hideTreeNav: false,        // Show folder tree
+    dialogSize: 'large',       // Size of modal
+    colorScheme: 'light',      // Theme            
+noWrap: true,             // Prevents double scrollbars
+
+            // ✅ HANDLERS:
+            onAssetSelect: (assets) => {
+                console.log('✓ Asset Selected:', assets);
+                if (assets && assets.length > 0) {
+                    updateUI(assets[0]);
+                }
+                closeDialog();
+            },
+            onCancel: () => {
+                console.log('✓ Cancelled');
+                closeDialog();
+            },
+            onClose: () => {
+                closeDialog();
             }
-        );
-    } catch (e) {
-        console.error('Failed to open selector:', e);
-        this.showToast('Error', 'Failed to open Asset Selector', 'error');
-        this.state.selectorOpen = false;
-    }
-}
+            
+};
+
+                console.log('📤 Opening Selector with:', assetProps);
+
+                try {
+                    PureJSSelectors.renderAssetSelectorWithAuthFlow(
+                        container,
+                        assetProps,
+                        () => {
+                            console.log('✓ Asset Selector Rendered');
+                            dialog.showModal();
+                        }
+                    );
+                } catch (e) {
+                    console.error('Failed to open selector:', e);
+                    this.showToast('Error', 'Failed to open Asset Selector', 'error');
+                    this.state.selectorOpen = false;
+                }
+            },
+
             closeSelector() {
                 const dialog = document.getElementById('asset-selector-dialog');
                 const container = document.getElementById('asset-selector-container');
