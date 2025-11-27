@@ -10,7 +10,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }
+        
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -692,87 +692,65 @@
                 }
             },
 
-            openSelector() {
-                if (!this.state.imsService) {
-                    this.showToast('Error', 'SDK not ready. Reloading...', 'error');
-                    setTimeout(() => window.location.reload(), 1000);
-                    return;
-                }
-
-                const dialog = document.getElementById('asset-selector-dialog');
-                const container = document.getElementById('asset-selector-container');
-
-                // Clear previous state
-                container.innerHTML = '';
-                this.state.selectorOpen = true;
-
-        const assetProps = {
-    imsOrg: CONFIG.IMS_ORG,
-    repositoryId: 'author-p173552-e1855304.adobeaemcloud.com',  // ✅ FIXED
-    env: 'prod',
-    selectMode: 'single',
-    allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],  // ✅ EXPANDED
-    authService: this.state.imsService,
-    aemHost: CONFIG.AEM_HOST,  // ✅ ADDED
+          openSelector() {
+    // ✅ ADDED: Close auth modal to prevent overlap
+    this.closeAuthModal();
     
-    // FROM ADOBE DOCS - add these:
-   /* hideTreeNav: false,        // Show folder tree
-    dialogSize: 'large',       // Size of modal
-    colorScheme: 'light',      // Theme
-    onAssetSelect: (assets) => {
-        console.log('✓ Asset Selected:', assets);  // ✅ Better logging
-        if (assets && assets.length > 0) {
-            this.updateUIWithAsset(assets[0]);
-        }
-        this.closeSelector();
-    },
+    if (!this.state.imsService) {
+        this.showToast('Error', 'SDK not ready. Reloading...', 'error');
+        setTimeout(() => window.location.reload(), 1000);
+        return;
+    }
 
-    onCancel: () => {
-        console.log('✓ Selection Cancelled');
-        this.closeSelector();
-    }*/
+    const dialog = document.getElementById('asset-selector-dialog');
+    const container = document.getElementById('asset-selector-container');
 
-hideTreeNav: false,        // Show folder tree
-    dialogSize: 'large',       // Size of modal
-    colorScheme: 'light',      // Theme            
-noWrap: true,             // Prevents double scrollbars
+    // Clear previous state
+    container.innerHTML = '';
+    this.state.selectorOpen = true;
 
-            // ✅ HANDLERS:
-            onAssetSelect: (assets) => {
-                console.log('✓ Asset Selected:', assets);
-                if (assets && assets.length > 0) {
-                    updateUI(assets[0]);
-                }
-                closeDialog();
-            },
-            onCancel: () => {
-                console.log('✓ Cancelled');
-                closeDialog();
-            },
-            onClose: () => {
-                closeDialog();
+    // ✅ CLEAN assetProps - NO duplicates, NO wrong functions
+    const assetProps = {
+        imsOrg: CONFIG.IMS_ORG,
+        repositoryId: 'author-p173552-e1855304.adobeaemcloud.com',
+        authService: this.state.imsService,
+        env: 'prod',
+        selectMode: 'single',
+        allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],
+        hideTreeNav: false,
+        colorScheme: 'light',
+
+        onAssetSelect: (assets) => {
+            console.log('✓ Asset Selected:', assets);
+            if (assets && assets.length > 0) {
+                this.updateUIWithAsset(assets[0]);  // ✅ Use "this." - correct method
             }
-            
-};
+            this.closeSelector();  // ✅ Use "this." - correct method
+        },
 
-                console.log('📤 Opening Selector with:', assetProps);
+        onCancel: () => {
+            console.log('✓ Selection Cancelled');
+            this.closeSelector();  // ✅ Use "this." - correct method
+        }
+    };
 
-                try {
-                    PureJSSelectors.renderAssetSelectorWithAuthFlow(
-                        container,
-                        assetProps,
-                        () => {
-                            console.log('✓ Asset Selector Rendered');
-                            dialog.showModal();
-                        }
-                    );
-                } catch (e) {
-                    console.error('Failed to open selector:', e);
-                    this.showToast('Error', 'Failed to open Asset Selector', 'error');
-                    this.state.selectorOpen = false;
-                }
-            },
+    console.log('📤 Opening Selector with:', assetProps);
 
+    try {
+        PureJSSelectors.renderAssetSelectorWithAuthFlow(
+            container,
+            assetProps,
+            () => {
+                console.log('✓ Asset Selector Rendered');
+                dialog.showModal();
+            }
+        );
+    } catch (e) {
+        console.error('Failed to open selector:', e);
+        this.showToast('Error', 'Failed to open Asset Selector', 'error');
+        this.state.selectorOpen = false;
+    }
+}
             closeSelector() {
                 const dialog = document.getElementById('asset-selector-dialog');
                 const container = document.getElementById('asset-selector-container');
