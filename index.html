@@ -716,7 +716,7 @@
     aemHost: CONFIG.AEM_HOST,  // ✅ ADDED
     
     // FROM ADOBE DOCS - add these:
-    hideTreeNav: false,        // Show folder tree
+   /* hideTreeNav: false,        // Show folder tree
     dialogSize: 'large',       // Size of modal
     colorScheme: 'light',      // Theme
     onAssetSelect: (assets) => {
@@ -730,7 +730,29 @@
     onCancel: () => {
         console.log('✓ Selection Cancelled');
         this.closeSelector();
-    }
+    }*/
+
+hideTreeNav: false,        // Show folder tree
+    dialogSize: 'large',       // Size of modal
+    colorScheme: 'light',      // Theme            
+noWrap: true,             // Prevents double scrollbars
+
+            // ✅ HANDLERS:
+            onAssetSelect: (assets) => {
+                console.log('✓ Asset Selected:', assets);
+                if (assets && assets.length > 0) {
+                    updateUI(assets[0]);
+                }
+                closeDialog();
+            },
+            onCancel: () => {
+                console.log('✓ Cancelled');
+                closeDialog();
+            },
+            onClose: () => {
+                closeDialog();
+            }
+            
 };
 
                 console.log('📤 Opening Selector with:', assetProps);
