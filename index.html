@@ -714,7 +714,11 @@
     allowedAssetMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],  // ✅ EXPANDED
     authService: this.state.imsService,
     aemHost: CONFIG.AEM_HOST,  // ✅ ADDED
-
+    
+    // FROM ADOBE DOCS - add these:
+    hideTreeNav: false,        // Show folder tree
+    dialogSize: 'large',       // Size of modal
+    colorScheme: 'light',      // Theme
     onAssetSelect: (assets) => {
         console.log('✓ Asset Selected:', assets);  // ✅ Better logging
         if (assets && assets.length > 0) {
