@@ -346,31 +346,27 @@
             color: #6b7280;
         }
 
-dialog#asset-selector-dialog {
-    background: white;
-    border-radius: 12px;
-    width: 90vw;
-    height: 90vh;
-    max-width: none;  /* CHANGED: remove max-width constraint */
-    max-height: none; /* CHANGED: remove max-height constraint */
-    padding: 0;
-    border: none;
-    box-shadow: 0 25px 80px rgba(0,0,0,0.4);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    margin: 0;
-    z-index: 10000;
-    inset: unset;
-    display: flex;
-    flex-direction: column;
-}
+ dialog#asset-selector-dialog {
+            background: white;
+            border-radius: 12px;
+            width: 85vw;
+            height: 85vh;
+            max-width: 1400px;
+            max-height: 900px;
+            padding: 0;
+            border: none;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0;
+            z-index: 10000;
+        }
 
-dialog#asset-selector-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 9999;
-}
+      dialog#asset-selector-dialog::backdrop {
+            background: rgba(0, 0, 0, 0.6);
+        }
 
         .dialog-header {
             padding: 16px 24px;
@@ -406,14 +402,15 @@ dialog#asset-selector-dialog::backdrop {
             border-color: #9ca3af;
         }
 
-#asset-selector-container {
-    width: 100%;
-    height: 100%;  /* CRITICAL: was calc(100% - 57px) */
-    overflow: hidden;
-    padding: 0;
-    display: flex;
-    flex: 1;  /* ADDED */
-}
+        #asset-selector-container {
+            width: 100%;
+            height: calc(100% - 57px);
+            overflow: auto;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         /* TOAST */
         .toast-container {
@@ -597,9 +594,10 @@ dialog#asset-selector-dialog::backdrop {
     </div>
 </div>
 
-<dialog id="asset-selector-dialog">
-    <div id="asset-selector-container"></div>
-</dialog>
+    <dialog id="asset-selector-dialog">
+        <button class="dialog-close-btn" onclick="app.closeSelector()">×</button>
+        <div id="asset-selector-container"></div>
+    </dialog>
 
     <div class="toast-container" id="toastContainer"></div>
 
